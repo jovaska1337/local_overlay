@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<longdescription>An easy to use and flexible DOOM launcher</longdescription>
+	<use>
+		<flag name="desktop-entry">Add a .desktop file for ZDL (disabled for gzdoom integration)</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">qbasicer/qzdl</remote-id>
+	</upstream>
+</pkgmetadata>

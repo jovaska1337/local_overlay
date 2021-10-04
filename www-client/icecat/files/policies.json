@@ -1,0 +1,117 @@
+{
+	"policies": {
+		"AppAutoUpdate": false,
+		"Bookmarks": [],
+		"CaptivePortal": false,
+		"Certificates": {
+			"ImportEnterpriseRoots": true
+		},
+		"DisableMasterPasswordCreation": true,
+		"DisableAppUpdate": true,
+		"DisableFeedbackCommands": true,
+		"DisableFirefoxScreenshots": true,
+		"DisableFirefoxAccounts": true,
+		"DisableFirefoxStudies": true,
+		"DisableFormHistory": true,
+		"DisablePasswordReveal": true,
+		"DisablePocket": true,
+		"DisableProfileImport": true,
+		"DisableProfileRefresh": true,
+		"DisableSafeMode": true,
+		"DisableSystemAddonUpdate": true,
+		"DisableTelemetry": true,
+		"DisplayBookmarksToolbar": false,
+		"DisplayMenuBar": "default-off",
+		"DNSOverHTTPS":  {
+			"Enabled": false,
+			"Locked": true
+		},
+		"DontCheckDefaultBrowser": true,
+		"EnableTrackingProtection": {
+			"Value": true,
+			"Locked": false,
+			"Cryptomining": true,
+			"Fingerprinting": true
+		},
+		"EncryptedMediaExtensions": {
+			"Enabled": false,
+			"Locked": true
+		},
+		"ExtensionUpdate": false,
+		"FlashPlugin": {
+			"Default": false,
+			"Locked": false
+		},
+		"FirefoxHome": {
+			"Search": false,
+			"TopSites": false,
+			"Highlights": false,
+			"Pocket": false,
+			"Snippets": false,
+			"Locked": false
+		},
+		"Homepage": {
+			"URL": "about:blank",
+			"Locked": false,
+			"StartPage": "homepage"
+		},
+		"PrimaryPassword": false,
+		"NetworkPrediction": false,
+		"NewTabPage": false,
+		"NoDefaultBookmarks": true,
+		"OfferToSaveLogins": false,
+		"OverrideFirstRunPage": "",
+		"OverridePostUpdatePage": "",
+		"PasswordManagerEnabled": false,
+		"Permissions": {
+			"Camera": {
+				"BlockNewRequests": true,
+				"Locked": true
+			},
+			"Microphone": {
+				"BlockNewRequests": true,
+				"Locked": true
+			},
+			"Location": {
+				"BlockNewRequests": true,
+				"Locked": true
+			},
+			"Notifications": {
+				"BlockNewRequests": true,
+				"Locked": true
+			},
+			"Autoplay": {
+				"Default": "block-audio-video",
+				"Locked": false
+			}
+		},
+		"PictureInPicture": {
+			"Enabled": false,
+			"Locked": false
+		},
+		"PopupBlocking": {
+			"Default": true,
+			"Locked": false
+		},
+		"PromptForDownloadLocation": true,
+		"SanitizeOnShutdown": {
+			"Cache": true,
+			"Cookies": true,
+			"Downloads": false,
+			"FormData": true,
+			"History": true,
+			"Sessions": true,
+			"SiteSettings": true,
+			"OfflineApps": true,
+			"Locked": false
+		},
+		"SearchBar": "unified",
+		"SearchSuggestEnabled": false,
+		"UserMessaging": {
+			"WhatsNew": false,
+			"ExtensionRecommendations": false,
+			"FeatureRecommendations": false,
+			"UrlbarInterventions": false
+		}
+	}
+}

@@ -1,0 +1,11 @@
+{
+  "default": {
+    "searchDefault": "DuckDuckGo",
+    "searchOrder": [
+        "DuckDuckGo", "Google", "Wikipedia (en)", "Wikipedia (fi)"
+    ],
+    "visibleDefaultEngines": [
+      "ddg", "google", "wikipedia_en", "wikipedia_fi"
+    ]
+  }
+}

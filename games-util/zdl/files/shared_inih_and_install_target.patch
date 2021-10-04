@@ -1,0 +1,45 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -6,16 +6,8 @@
+ project(qzdl LANGUAGES C CXX)
+ find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
+ 
+-include(FetchContent)
+-FetchContent_Declare(
+-	inih
+-	GIT_REPOSITORY https://github.com/benhoyt/inih.git
+-	GIT_TAG r44
+-)
+-FetchContent_GetProperties(inih)
+-if (NOT inih_POPULATED)
+-	FetchContent_Populate(inih)
+-endif()
++find_package(PkgConfig REQUIRED)
++pkg_check_modules(INIH REQUIRED inih)
+ 
+ add_executable(
+ 	zdl
+@@ -45,9 +37,20 @@
+ 	libwad.cpp
+ 	qzdl.cpp
+ 	${PROJECT_SOURCE_DIR}/zdlconf/zdlconf.cpp
+-	${inih_SOURCE_DIR}/ini.c
+ )
+ 
+ target_include_directories(zdl PRIVATE ${PROJECT_SOURCE_DIR}/zdlconf)
+-target_include_directories(zdl PRIVATE ${inih_SOURCE_DIR})
+-target_link_libraries(zdl Qt5::Core Qt5::Widgets)
++target_link_libraries(zdl Qt5::Core Qt5::Widgets ${INIH_LIBRARIES})
++
++install(PROGRAMS ${CMAKE_BINARY_DIR}/zdl TYPE BIN)
++
++message(STATUS "<<< Gentoo configuration >>>
++Build type      ${CMAKE_BUILD_TYPE}
++Install path    ${CMAKE_INSTALL_PREFIX}
++Compiler flags:
++C               ${CMAKE_C_FLAGS}
++C++             ${CMAKE_CXX_FLAGS}
++Linker flags:
++Executable      ${CMAKE_EXE_LINKER_FLAGS}
++Module          ${CMAKE_MODULE_LINKER_FLAGS}
++Shared          ${CMAKE_SHARED_LINKER_FLAGS}\n")

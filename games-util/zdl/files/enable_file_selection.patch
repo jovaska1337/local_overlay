@@ -1,0 +1,209 @@
+--- a/ZDLFileList.cpp
++++ b/ZDLFileList.cpp
+@@ -21,6 +21,8 @@
+ #include "zdlconf.h"
+ #include "ZDLMapFile.h"
+ 
++#include "disabled.h"
++
+ extern QString getLastDir();
+ extern void saveLastDir(QString fileName);
+ 
+@@ -30,13 +32,22 @@
+ void ZDLFileList::newDrop(QStringList fileList){
+ 	for (int i = 0; i < fileList.size(); i++) {
+ 		ZDLFileListable *zList = new ZDLFileListable(pList, 1001, fileList[i]);
++		zList->enable();
+ 		insert(zList, -1);
+ 	}
+ }
+ 
+ void ZDLFileList::newConfig(){
++	QString disabled;
++
+ 	pList->clear();
+ 	auto zconf = ZDLConfigurationManager::getActiveConfiguration();
++
++	if (zconf->contains(disabledKey))
++	{
++		disabled = zconf->value(disabledKey).toString();
++	}
++
+ 	for (int i = 0; ; i++)
+ 	{
+ 		QString key("zdl.save/file%1");
+@@ -45,12 +56,21 @@
+ 		{
+ 			break;
+ 		}
++
+ 		ZDLFileListable *zList = new ZDLFileListable(pList, 1001, zconf->value(key).toString());
++
++		/* disabled in constructor */
++		if (!disabledScan(disabled, i))
++		{
++			zList->enable();
++		}
++
+ 		insert(zList, -1);
+ 	}
+ }
+ 
+ void ZDLFileList::rebuild(){
++	QStringList disabled;
+ 
+ 	auto zconf = ZDLConfigurationManager::getActiveConfiguration();
+ 	for (int i = 0; ; i++)
+@@ -64,11 +84,26 @@
+ 		zconf->remove(key);
+ 	}
+ 
++	if (zconf->contains(disabledKey))
++	{
++		zconf->remove(disabledKey);
++	}
++
+ 	for(int i = 0; i < count(); i++){
+ 		QListWidgetItem *itm = pList->item(i);
+ 		ZDLFileListable* fitm = (ZDLFileListable*)itm;
+ 		QString name = QString("file%1").arg(QString::number(i));
+ 		zconf->setValue("zdl.save/" + name, fitm->getFile());
++
++		if (!fitm->state())
++		{
++			disabled << QString::number(i);
++		}
++	}
++
++	if (disabled.size() > 0)
++	{
++		zconf->setValue(disabledKey, disabled.join(","));
+ 	}
+ }
+ 
+@@ -88,6 +123,7 @@
+ 	for(int i = 0; i < fileNames.size(); i++){
+ 		saveLastDir(fileNames[i]);
+ 		ZDLFileListable *zList = new ZDLFileListable(pList, 1001, fileNames[i]);
++		zList->enable();
+ 		insert(zList, -1);
+ 	}
+ }
+--- a/ZDLFileListable.cpp
++++ b/ZDLFileListable.cpp
+@@ -26,11 +26,24 @@
+ 
+ ZDLFileListable::ZDLFileListable( QListWidget *parent, int type, QString file):ZDLNameListable(parent, type, file, QFileInfo(file).fileName()){
+ 	fileName = file;
++
++	setFlags(flags() | Qt::ItemIsUserCheckable);
++	/* initialize here just in case */
++	setCheckState(Qt::Unchecked);
+ }
+ 
+ QString ZDLFileListable::getFile(){
+ 	return fileName;
+ }
+ 	
++bool ZDLFileListable::state() {
++	return checkState();
++}
+ 
++void ZDLFileListable::enable() {
++	setCheckState(Qt::Checked);
++}
+ 
++void ZDLFileListable::disable() {
++	setCheckState(Qt::Unchecked);
++}
+--- a/ZDLFileListable.h
++++ b/ZDLFileListable.h
+@@ -21,10 +21,14 @@
+ 
+ #include "ZDLNameListable.h"
+ 
+-class ZDLFileListable : public ZDLNameListable{
+-public:
+-	ZDLFileListable( QListWidget * parent, int type, QString qfile);
+-	QString getFile();
++class ZDLFileListable : public ZDLNameListable {
++	public:
++		ZDLFileListable( QListWidget * parent, int type, QString qfile);
++		QString getFile();
++
++		bool state();
++		void enable();
++		void disable();
+ 
+ 	private:
+ 		QString fileName;
+--- a/ZDLMainWindow.cpp
++++ b/ZDLMainWindow.cpp
+@@ -29,6 +29,8 @@
+ #include "ico_icon.xpm"
+ #include <QDebug>
+ 
++#include "disabled.h"
++
+ extern QApplication *qapp;
+ extern QString versionString;
+ 
+@@ -285,6 +287,12 @@
+ 		ourString << zconf->value("zdl.save/dmflags2").toString();
+ 	}
+ 
++	QString disabled;
++	if (zconf->contains(disabledKey))
++	{
++		disabled = zconf->value(disabledKey).toString();
++	}
++
+ 	QStringList pwads;
+ 	QStringList dhacked;
+ 	for (int i = 0; ; i++)
+@@ -294,6 +302,12 @@
+ 		{
+ 			break;
+ 		}
++
++		if (disabledScan(disabled, i))
++		{
++			continue;
++		}
++
+ 		auto file = QFileInfo(zconf->value(key).toString());
+ 		if (file.suffix().compare("deh", Qt::CaseInsensitive) == 0 || file.suffix().compare("bex", Qt::CaseInsensitive) == 0)
+ 		{
+--- a/disabled.h
++++ b/disabled.h
+@@ -0,0 +1,30 @@
++/* This is put into it's own header file as I couldn't figure out a better
++ * way to include it both in ZDLFileList.cpp and ZDLMainWindow.cpp
++ */
++#ifndef _DISABLED_H_
++#define _DISABLED_H_
++
++#include <QString>
++#include <QStringList>
++
++const QString disabledKey = "zdl.save/disabled";
++
++/* Due to the way the configuration is implemented I'm pretty
++ * sure this is more efficient than creating a set from the
++ * disabled value every time we want to do something with it.
++ */
++inline bool disabledScan(QString str, int val) {
++        for (auto s : str.split(",", Qt::SkipEmptyParts))
++	{
++                bool ok;
++
++                if ((val == s.toInt(&ok, 10)) && ok)
++		{
++                        return true;
++                }
++        }
++
++        return false;
++}
++
++#endif

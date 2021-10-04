@@ -1,0 +1,131 @@
+#!/bin/env python3
+
+# this script maintains a sane ZDL
+# configuration for GZDOOM/ZDOOM
+
+import os
+import sys
+import pwd
+import configparser
+
+# ports will be overridden in the config in this order
+PORTS_OVERRIDE = (
+    ("GZDOOM", "/usr/bin/gzdoom"),
+    ("ZDOOM", "/usr/bin/zdoom")
+)
+
+# this port will be set as the selected one
+SELECTED_PORT = 0
+
+# files that point to invalid paths will be removed
+CHECK_PATHS = True
+
+def touch(path):
+    try:
+        os.utime(path, None)
+    except OSError:
+        open(path, 'a').close()
+
+def get_config_path():
+    # attempt to find the home directory of the running user
+    if (not "HOME" in os.environ) \
+        or (not os.path.isdir(os.environ["HOME"])):
+        home = pwd.getpwduid(os.getuid()).pw_dir 
+        if not os.path.isdir(home):
+            raise RuntimeError("Can't find user home.")
+    else:
+        home = os.environ["HOME"]
+
+    path = os.path.join(home, ".config/Vectec Software/qZDL.ini")
+   
+    # create the config file if it doesn't exist
+    if not os.path.exists(path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+    touch(path)
+
+    return path
+
+def file_check(path):
+    return os.path.isfile and os.access(path, os.R_OK)
+
+def pn_filter(config, sect, keys, fmt, init=[], check_paths=True, check_dups=True):
+    name_keys = sorted(filter(lambda x: \
+        x[-1] == "n", keys), reverse=True)
+    path_keys = sorted(filter(lambda x: \
+        x[-1] == "f", keys), reverse=True)
+
+    new_pairs = list(filter(lambda x: \
+        not check_paths or file_check(x[1]), init))
+    new_paths = set([x[1] for x in new_pairs])
+    for name_key in name_keys:
+        path_key = name_key[:-1] + "f"
+        if not path_key in path_keys:
+            continue
+        path = config.get(sect, path_key)
+        if check_paths and not file_check(path):
+            continue
+        if check_dups and path in new_paths:
+            continue
+        new_pairs.append((config.get(sect, name_key), path))
+        new_paths.add(path)
+
+    for key in name_keys:
+        config.remove_option(sect, key)
+    for key in path_keys:
+        config.remove_option(sect, key)
+
+    i = 0
+    for name, path in reversed(new_pairs):
+        config.set(sect, fmt.format(i, "n"), name)
+        config.set(sect, fmt.format(i, "f"), path)
+        i += 1
+
+def main():
+    config_path = get_config_path()
+
+    config = configparser.ConfigParser(strict=False, delimiters="=")
+    config.read(config_path)
+
+    # add required sections
+    for section in ("zdl.ports", "zdl.iwads", "zdl.save"):
+        if not config.has_section(section):
+            config.add_section(section)
+
+    # filter duplicate ports, invalid paths and
+    # force PORTS_OVERRIDE to be the first ports
+    pn_filter(config, "zdl.ports", [x[0] for x in \
+        filter(lambda x: x[0][0] == "p" and x[0][1:-1].isdigit(), \
+        config.items("zdl.ports"))], "p{}{}", PORTS_OVERRIDE)
+
+    # set the selected port
+    config.set("zdl.save", "port", PORTS_OVERRIDE[SELECTED_PORT][0])
+
+    # filter duplicate iwads and invalid paths
+    pn_filter(config, "zdl.iwads", [x[0] for x in \
+        filter(lambda x: x[0][0] == "i" and x[0][1:-1].isdigit(), \
+        config.items("zdl.iwads"))], "i{}{}")
+
+    # filter files with invalid paths
+    path_keys = [x[0] for x in filter(lambda x: x[0][:4].startswith("file") \
+        and x[0][4:].isdigit(), config.items("zdl.save"))]
+    new_files = []
+    for key in path_keys:
+        path = config.get("zdl.save", key)
+        config.remove_option("zdl.save", key)
+        if not file_check(path):
+            continue
+        new_files.append(path)
+
+    for i, path in enumerate(new_files):
+        config.set("zdl.save", "file{}".format(i), path)
+
+    # write ZDL config
+    fp = open(config_path, "w")
+    config.write(fp, False)
+    fp.close()
+
+    # exec ZDL
+    os.execv("/usr/bin/zdl", ["/usr/bin/zdl"])
+
+if __name__ == "__main__":
+    main()
