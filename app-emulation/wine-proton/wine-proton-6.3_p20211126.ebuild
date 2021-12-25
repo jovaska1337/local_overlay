@@ -9,7 +9,6 @@ PLOCALE_BACKUP="en"
 inherit autotools eapi7-ver estack eutils flag-o-matic gnome2-utils multilib multilib-minimal pax-utils plocale toolchain-funcs virtualx xdg-utils
 
 MY_PN="${PN%%-*}"
-MY_P="${MY_PN}-${PV}"
 
 if [[ ${PV} == "9999" ]] ; then
 	EGIT_REPO_URI="https://github.com/ValveSoftware/wine"
@@ -19,9 +18,8 @@ if [[ ${PV} == "9999" ]] ; then
 	S="${WORKDIR}/${MY_P}"
 	#KEYWORDS=""
 else
-	MAJOR_V=$(ver_cut 1)
-	GIT_COMMIT="3083b57f002a84b858ca6a093e90527665f61d94"
-	SRC_URI="https://github.com/ValveSoftware/wine/archive/${GIT_COMMIT}.tar.gz -> ${MY_PN}-${GIT_V}.tar.gz"
+	GIT_COMMIT="95c45180c1edbae7c5293368e16d69933472bba4"
+	SRC_URI="https://github.com/ValveSoftware/wine/archive/${GIT_COMMIT}.tar.gz -> ${PN}-${GIT_COMMIT}.tar.gz"
 	S="${WORKDIR}/${MY_PN}-${GIT_COMMIT}"
 	KEYWORDS="-* ~amd64 ~x86"
 fi
@@ -36,13 +34,19 @@ SRC_URI="${SRC_URI}
 "
 
 LICENSE="LGPL-2.1"
+
+# FIXME: slotting by the complete version may not be a good idea.
 SLOT="${PV}"
-IUSE="+abi_x86_32 +abi_x86_64 +alsa capi cups custom-cflags dos elibc_glibc +faudio +fontconfig +gecko gphoto2 gsm gssapi gstreamer +jpeg kerberos kernel_FreeBSD +lcms ldap mingw +mono mp3 netapi nls odbc openal opencl +opengl osmesa oss +perl pcap +png prelink pulseaudio +realtime +run-exes samba scanner sdl selinux +ssl test +threads +truetype udev +udisks +unwind usb v4l vkd3d vulkan +X +xcomposite xinerama +xml"
+
+IUSE="+abi_x86_32 +abi_x86_64 +alsa capi cups custom-cflags +dbus dos elibc_glibc +faudio +fontconfig +gecko gphoto2 gsm gssapi gstreamer +jpeg kerberos kernel_FreeBSD +lcms ldap mingw +mono mp3 netapi nls odbc openal opencl +opengl osmesa oss +perl pcap +png prelink pulseaudio +realtime +run-exes samba scanner sdl selinux +ssl +systray test +threads +truetype udev +udisks +unwind usb v4l vkd3d vulkan +X +xcomposite xinerama +xml"
 REQUIRED_USE="|| ( abi_x86_32 abi_x86_64 )
 	X? ( truetype )
 	elibc_glibc? ( threads )
 	osmesa? ( opengl )
 	test? ( abi_x86_32 )
+	systray? ( dbus )
+	udisks? ( dbus )
+	dbus? ( || ( systray udisks ) )
 	vkd3d? ( vulkan )" # osmesa-opengl #286560 # X-truetype #551124
 
 # FIXME: the test suite is unsuitable for us; many tests require net access
@@ -92,7 +96,7 @@ COMMON_DEPEND="
 	ssl? ( net-libs/gnutls:=[${MULTILIB_USEDEP}] )
 	truetype? ( >=media-libs/freetype-2.0.0[${MULTILIB_USEDEP}] )
 	udev? ( virtual/libudev:=[${MULTILIB_USEDEP}] )
-	udisks? ( sys-apps/dbus[${MULTILIB_USEDEP}] )
+	dbus? ( sys-apps/dbus[${MULTILIB_USEDEP}] )
 	unwind? ( sys-libs/libunwind[${MULTILIB_USEDEP}] )
 	usb? ( virtual/libusb:1[${MULTILIB_USEDEP}]  )
 	v4l? ( media-libs/libv4l[${MULTILIB_USEDEP}] )
@@ -145,6 +149,7 @@ PATCHES=(
 	"${PATCHDIR}/patches/${MY_PN}-4.7-multilib-portage.patch" #395615
 	"${PATCHDIR}/patches/${MY_PN}-2.0-multislot-apploader.patch" #310611
 	"${PATCHDIR}/patches/${MY_PN}-5.9-Revert-makedep-Install-also-generated-typelib-for-in.patch"
+	"${FILESDIR}/sincos.patch" # implement sincos() in msvcrt to fix issue with mingw build
 )
 PATCHES_BIN=()
 
@@ -318,6 +323,7 @@ src_unpack() {
 }
 
 src_prepare() {
+	use systray && eapply "${FILESDIR}/systray_dbus.patch" || die
 
 	eapply_bin(){
 		local patch
@@ -408,7 +414,7 @@ multilib_src_configure() {
 		$(use_with capi)
 		$(use_with lcms cms)
 		$(use_with cups)
-		$(use_with udisks dbus)
+		$(use_with dbus)
 		$(use_with faudio)
 		$(use_with fontconfig)
 		$(use_with ssl gnutls)

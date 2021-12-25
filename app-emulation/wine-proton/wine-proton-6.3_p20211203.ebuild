@@ -18,7 +18,7 @@ if [[ ${PV} == "9999" ]] ; then
 	S="${WORKDIR}/${MY_P}"
 	#KEYWORDS=""
 else
-	GIT_COMMIT=""
+	GIT_COMMIT="eaf08d0865d4cce550079f5714e1300b1f7ef2b8"
 	SRC_URI="https://github.com/ValveSoftware/wine/archive/${GIT_COMMIT}.tar.gz -> ${PN}-${GIT_COMMIT}.tar.gz"
 	S="${WORKDIR}/${MY_PN}-${GIT_COMMIT}"
 	KEYWORDS="-* ~amd64 ~x86"

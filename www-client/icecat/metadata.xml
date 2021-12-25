@@ -27,6 +27,7 @@
 		instead of bundled.</flag>
 	<flag name="system-webp">Use the system-wide <pkg>media-libs/libwebp</pkg>
 		instead of bundled.</flag>
+	<flag name="sndio">Enable support for the <pkg>media-sound/sndio</pkg> backend</flag>
 	<flag name="unity-menubar">Enable openSUSE's patch for exposing the menu bar on dbus.</flag>
 	<flag name="custom-fixes">Enable some minor tweaks. (see ebuild for details)</flag>
 </use>

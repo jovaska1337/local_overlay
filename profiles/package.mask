@@ -1,1 +1,2 @@
-# there should be no broken packages anymore
+# this ebuild is unfinished at the moment
+app-emulation/looking-glass

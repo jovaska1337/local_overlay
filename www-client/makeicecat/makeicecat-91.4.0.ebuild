@@ -6,8 +6,9 @@ EAPI=7
 DESCRIPTION="Script for creating GNU Icecat tarball"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-COMMIT="799c5ee63c4d65add90ff55f4948562e31a7be1a"
+COMMIT="dd79d69e5dc6e6e751195001f322b30746be6903"
 
+# 89.0 and 94.0 PGP keys are the same
 SRC_URI="
 	https://git.savannah.gnu.org/cgit/gnuzilla.git/snapshot/gnuzilla-"${COMMIT}".tar.gz -> "${P}".tar.gz
 	https://archive.mozilla.org/pub/firefox/releases/89.0/KEY -> Mozilla_pgp_key-20210507.pgp
@@ -26,6 +27,7 @@ BDEPEND="
 	app-crypt/gnupg
 	dev-vcs/mercurial
 	dev-perl/File-Rename
+	dev-python/jsonschema
 	net-misc/wget
 "
 

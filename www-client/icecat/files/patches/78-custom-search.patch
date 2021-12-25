@@ -1,0 +1,14 @@
+--- a/browser/components/search/extensions/list.json
++++ b/browser/components/search/extensions/list.json
+@@ -0,0 +1,11 @@
++{
++  "default": {
++    "searchDefault": "DuckDuckGo",
++    "searchOrder": [
++        "DuckDuckGo", "SearX", "Yandex", "Google", "Internet Archive", "Wikipedia (en)", "Wikipedia (fi)"
++    ],
++    "visibleDefaultEngines": [
++      "ddg", "searx", "yandex", "google", "internet_archive", "wikipedia_en", "wikipedia_fi"
++    ]
++  }
++}
