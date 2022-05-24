@@ -1,0 +1,10 @@
+--- a/makeicecat
++++ b/makeicecat
+@@ -633,6 +633,7 @@
+ 
+     # Leave user agent as Firefox
+     sed "/MOZILLA_UAVERSION/ s:IceCat/:Firefox/:" -i netwerk/protocol/http/nsHttpHandler.cpp
++    sed 's/IceCat\//Firefox\//g' -i toolkit/components/resistfingerprinting/nsRFPService.cpp
+ 
+     find . -name region.properties | xargs -i /bin/sed 's_https://www\.mibbit.*__' -i {}
+ 

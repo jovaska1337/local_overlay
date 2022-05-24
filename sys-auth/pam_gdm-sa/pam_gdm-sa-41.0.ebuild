@@ -11,6 +11,7 @@ HOMEPAGE="https://wiki.gnome.org/Projects/GDM"
 # we can't use gnome.org.eclass for this as the package name isn't gdm
 # this is equivalent to what it does internally
 SRC_URI="mirror://gnome/sources/gdm/$(ver_cut 1)/gdm-${PV}.tar.xz"
+RESTRICT="mirror"
 
 LICENSE="GPL-2+"
 

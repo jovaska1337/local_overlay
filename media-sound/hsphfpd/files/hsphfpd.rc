@@ -1,0 +1,12 @@
+#!/sbin/openrc-run
+# Copyright 2022 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="hsphfpd daemon"
+description="hsphfpd daemon"
+command=/usr/bin/hsphfpd
+command_args=""
+
+depend() {
+	after bluetooth
+}

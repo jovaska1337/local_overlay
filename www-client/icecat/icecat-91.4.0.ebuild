@@ -961,6 +961,8 @@ src_install() {
 		newins "${FILESDIR}/policies.json" policies.json
 		insinto "${MOZILLA_FIVE_HOME}"
 		newins "${FILESDIR}/mozilla.cfg" mozilla.cfg
+		insinto "${MOZILLA_FIVE_HOME}/defaults/pref"
+		newins "${FILESDIR}/autoconfig.js" autoconfig.js
 	fi
 
 	# Install system-wide preferences

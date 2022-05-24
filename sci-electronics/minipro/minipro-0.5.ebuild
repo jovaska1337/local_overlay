@@ -13,6 +13,8 @@ LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64"
 
+RESTRICT="mirror"
+
 RDEPEND="virtual/libusb:1"
 DEPEND="${RDEPEND}"
 

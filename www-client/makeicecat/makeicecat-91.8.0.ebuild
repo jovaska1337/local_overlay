@@ -6,7 +6,7 @@ EAPI=7
 DESCRIPTION="Script for creating GNU Icecat tarball"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-COMMIT="dd79d69e5dc6e6e751195001f322b30746be6903"
+COMMIT="3aec3e591e7b1de0bfe5025a54ef5771a9823917"
 
 # 89.0 and 94.0 PGP keys are the same
 SRC_URI="
