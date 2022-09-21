@@ -19,7 +19,7 @@ if [[ ${PV} == "9999" ]]; then
 	SRC_URI=""
 else
 	SRC_URI="https://github.com/doitsujin/dxvk/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="-* ~amd64"
+	KEYWORDS="-* amd64"
 fi
 
 LICENSE="ZLIB"
@@ -119,9 +119,13 @@ multilib_src_configure() {
 		"$(meson_use d3d10 'enable_d3d10')"
 		"$(meson_use d3d11 'enable_d3d11')"
 		"$(meson_use dxgi 'enable_dxgi')"
-		"$(meson_use test 'enable_tests')"
+		#"$(meson_use test 'enable_tests')"
 	)
 	meson_src_configure
+}
+
+multilib_src_compile() {
+	meson_src_compile
 }
 
 multilib_src_install() {
