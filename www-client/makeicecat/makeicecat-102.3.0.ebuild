@@ -6,7 +6,7 @@ EAPI=7
 DESCRIPTION="Script for creating GNU Icecat tarball"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-COMMIT="298024d727053a1609df4003fb4438836d5181f4"
+COMMIT="10bd9dafbd9ce466720ff9539d91a3f96f482b56"
 
 # 89.0 and 94.0 PGP keys are the same
 SRC_URI="
@@ -31,7 +31,7 @@ BDEPEND="
 	net-misc/wget
 "
 
-PATCHES=( "${FILESDIR}/icecat-rfp-ua-fix.patch" )
+PATCHES=( "${FILESDIR}/$(ver_cut 1)-icecat-rfp-ua-fix.patch" )
 
 S=""${WORKDIR}"/gnuzilla-"${COMMIT}""
 

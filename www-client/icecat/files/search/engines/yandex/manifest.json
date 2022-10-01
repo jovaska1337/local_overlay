@@ -1,0 +1,20 @@
+{
+	"name": "Yandex",
+	"description": "Search Yandex",
+	"manifest_version": 2,
+	"version": "1.2",
+	"applications": { "gecko": { "id": "yandex@search.mozilla.org" } },
+	"hidden": true,
+	"icons": { "16": "favicon.ico" },
+	"web_accessible_resources": [ "favicon.ico" ],
+	"chrome_settings_overrides": {
+		"search_provider": {
+			"keyword": [ "@yandex" ],
+			"name": "Yandex",
+			"search_url": "https://www.yandex.com/search",
+			"search_form": "https://www.yandex.com/",
+			"suggest_url": "https://suggest.yandex.com/suggest-ff.cgi?part={searchTerms}",
+			"search_url_get_params": "text={searchTerms}"
+		}
+	}
+}

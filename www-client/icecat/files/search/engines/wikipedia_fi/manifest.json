@@ -1,0 +1,22 @@
+{
+	"name": "Wikipedia (fi)",
+	"description": "Wikipedia, vapaa tietosanakirja",
+	"manifest_version": 2,
+	"version": "1.2",
+	"applications": { "gecko": {
+		"id": "wikipedia_fi@search.mozilla.org" } },
+	"hidden": true,
+	"icons": { "16": "favicon.ico" },
+	"web_accessible_resources": [ "favicon.ico" ],
+	"chrome_settings_overrides": {
+		"search_provider": {
+			"keyword": [ "@wikifi" ],
+			"name": "Wikipedia (fi)",
+			"search_url": "https://fi.wikipedia.org/wiki/Toiminnot:Haku",
+			"search_form": "https://fi.wikipedia.org/wiki/Toiminnot:Haku",
+			"search_url_get_params": "search={searchTerms}",
+			"suggest_url": "https://fi.wikipedia.org/w/api.php",
+			"suggest_url_get_params": "action=opensearch&search={searchTerms}"
+		}
+	}
+}

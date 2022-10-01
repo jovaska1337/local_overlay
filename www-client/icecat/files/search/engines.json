@@ -1,0 +1,53 @@
+{
+      "data": [ {
+               "webExtension": { "id": "ddg@search.mozilla.org" },
+               "id": "00000000-0000-0000-0000-000000000001",
+               "appliesTo": [ { "included": { "everywhere": true } } ],
+               "default": "yes",
+               "defaultPrivate": "yes",
+               "orderHint": 7
+       }, {
+               "webExtension": { "id": "searx@search.mozilla.org" },
+               "id": "00000000-0000-0000-0000-000000000002",
+               "appliesTo": [ { "included": { "everywhere": true } } ],
+               "default": "no",
+               "defaultPrivate": "no",
+               "orderHint": 6
+       }, {
+               "webExtension": { "id": "google@search.mozilla.org" },
+               "id": "00000000-0000-0000-0000-000000000003",
+               "appliesTo": [ { "included": { "everywhere": true } } ],
+               "default": "no",
+               "defaultPrivate": "no",
+               "orderHint": 5
+       }, {
+               "webExtension": { "id": "yandex@search.mozilla.org" },
+               "id": "00000000-0000-0000-0000-000000000004",
+               "appliesTo": [ { "included": { "everywhere": true } } ],
+               "default": "no",
+               "defaultPrivate": "no",
+               "orderHint": 4
+       }, {
+               "webExtension": { "id": "internet_archive@search.mozilla.org" },
+               "id": "00000000-0000-0000-0000-000000000005",
+               "appliesTo": [ { "included": { "everywhere": true } } ],
+               "default": "no",
+               "defaultPrivate": "no",
+               "orderHint": 3
+       }, {
+               "webExtension": { "id": "wikipedia_fi@search.mozilla.org" },
+               "id": "00000000-0000-0000-0000-000000000006",
+               "appliesTo": [ { "included": { "everywhere": true } } ],
+               "default": "no",
+               "defaultPrivate": "no",
+               "orderHint": 2
+       }, {
+               "webExtension": { "id": "wikipedia_en@search.mozilla.org" },
+               "id": "00000000-0000-0000-0000-000000000007",
+               "appliesTo": [ { "included": { "everywhere": true } } ],
+               "default": "no",
+               "defaultPrivate": "no",
+               "orderHint": 1
+       } ],
+       "timestamp": @TS@
+}

@@ -1,0 +1,18 @@
+{
+	"name": "Internet Archive",
+	"description": "Search www.archive.org",
+	"manifest_version": 2,
+	"version": "1.2",
+	"applications": { "gecko": {
+		"id": "internet_archive@search.mozilla.org" } },
+	"hidden": true,
+	"icons": { "16": "favicon.ico" },
+	"web_accessible_resources": [ "favicon.ico" ],
+	"chrome_settings_overrides": {
+		"search_provider": {
+			"keyword": [ "@ia", "@archive", "@internetarchive" ],
+			"name": "Internet Archive",
+			"search_url": "https://www.archive.org/search.php?query={searchTerms}&amp;sort=-%2Fadditional%2Fitem%2Fdownloads"
+		}
+	}
+}
