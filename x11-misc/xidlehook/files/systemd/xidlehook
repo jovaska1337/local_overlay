@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# timeouts can be specified via environment or configured here
+# NOTE: --timer is additive rather than absolute
+[[ ! "$TIMEOUT_LBRT" ]] && TIMEOUT_LBRT=300 # 5min
+[[ ! "$TIMEOUT_LOCK" ]] && TIMEOUT_LOCK=300 # 10min (15min)
+[[ ! "$TIMEOUT_DPMS" ]] && TIMEOUT_DPMS=300 # 15min (30min)
+[[ ! "$TIMEOUT_SUSP" ]] && TIMEOUT_SUSP=900 # 45min (75min)
+
+# run xrandr command for all active outputs
+xrandr_cmd() {
+	echo "for out in \$(xrandr | awk '/ connected/{print \$1}');" \
+		"do xrandr --output \"\$out\" $@; done"
+}
+
+# generate a dbus-send method call command
+dbus_cmd() {
+	local system=0
+	local object
+	local method
+
+	local option
+	while getopts "o:m:s" option; do
+		case "$opt" in
+			'o') object="$OPTARG";;
+			'm') method="$OPTARG";;
+			's') system=1;;
+		esac
+	done
+	shift $(($OPTIND - 1))
+
+	# object and method are required
+	[[ ! "$object" || ! "$method" ]] && return 1
+
+	# --print-reply is necessary or the method won't be run (bug?)
+	echo "dbus-send $([[ "$system" -eq 1 ]] && echo '--system ')" \
+		"--print-reply" \
+		"--dest=\"${object}\" \"/\"${object//./\/}\"" \
+		"\"${object}.${method}\" $@ &>/dev/null"
+}
+
+# disable the default X11 behavior
+xset s noblank s noexpose -dpms
+
+# run xidlehook
+exec xidlehook \
+	--detect-sleep \
+	--not-when-fullscreen \
+	--not-when-audio \
+	--timer "$TIMEOUT_LBRT" \
+		"$(xrandr_cmd --brightness .5)" \
+		"$(xrandr_cmd --brightness 1)" \
+	--timer "$TIMEOUT_LOCK" \
+		"$(xrandr_cmd --brightness .1);$(dbus_cmd -oorg.freedesktop.ScreenSaver -mLock)" \
+		"$(xrandr_cmd --brightness 1)" \
+	--timer "$TIMEOUT_DPMS" \
+		"xset dpms force standby" \
+		"$(xrandr_cmd --brightness 1)" \
+	--timer "$TIMEOUT_SUSP" \
+		"$(dbus_cmd -s -oorg.freedesktop.login1 -mManager.Suspend boolean:true)" \
+		"$(xrandr_cmd --brightness 1); xset s noblank s noexpose -dpms"

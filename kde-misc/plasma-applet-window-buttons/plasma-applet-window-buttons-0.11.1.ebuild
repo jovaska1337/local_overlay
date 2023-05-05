@@ -1,4 +1,4 @@
-EAPI=7
+EAPI=8
 
 inherit ecm
 
@@ -28,6 +28,8 @@ DEPEND="
 RDEPEND="${DEPEND}"
 
 #DOCS=( README.md )
+
+PATCHES=( "${FILESDIR}/window-class.patch" )
 
 src_unpack()
 {

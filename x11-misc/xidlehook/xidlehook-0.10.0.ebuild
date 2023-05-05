@@ -147,12 +147,13 @@ LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64"
 RESTRICT="mirror"
-IUSE="pulseaudio"
+IUSE="pulseaudio systemd"
 
 # not sure if xidlehook plays nicely with apulse
 # the repository doesn't specify library versions
 # so we just assume that the current ones work
 RDEPEND="
+	systemd? ( sys-apps/systemd )
 	pulseaudio? ( media-sound/pulseaudio )
 	x11-libs/libxcb
 	x11-libs/libXScrnSaver
@@ -170,15 +171,29 @@ src_configure() {
 src_install() {
 	cargo_src_install --path xidlehook-daemon
 
-	# install helper scripts
-	exeinto /usr/share/xidlehook
-	doexe "${FILESDIR}/xidlehook.sh"
-	doexe "${FILESDIR}/xidlehook_start.sh"
-	doexe "${FILESDIR}/xidlehook_stop.sh"
+	# install systemd user service
+	if use systemd; then
+		exeinto /usr/libexec
+		doexe "${FILESDIR}/systemd/xidlehook"
+		insinto /usr/lib/systemd/user
+		doins "${FILESDIR}/systemd/xidlehook.service"
+
+	# install non-systemd helpers
+	else
+		exeinto /usr/share/xidlehook
+		doexe "${FILESDIR}/non-systemd/xidlehook.sh"
+		doexe "${FILESDIR}/non-systemd/xidlehook_start.sh"
+		doexe "${FILESDIR}/non-systemd/xidlehook_stop.sh"
+	fi
 }
 
 pkg_postinst() {
-	einfo "You can use the scripts located in /usr/share/xidlehook"
-	einfo "to integarate xidlehook with your DE. (you should write"
-	einfo "your own as they're quite shitty.)"
+	if use systemd; then
+		einfo "xidlehook is installed but not enabled."
+		einfo "run systemctl --user enable xidlehook"
+	else
+		einfo "You can use the scripts located in /usr/share/xidlehook"
+		einfo "to integarate xidlehook with your DE. (you should write"
+		einfo "your own as they're quite shitty.)"
+	fi
 }

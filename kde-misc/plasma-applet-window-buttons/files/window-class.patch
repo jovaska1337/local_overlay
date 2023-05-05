@@ -1,0 +1,29 @@
+--- a/libappletdecoration/previewclient.h
++++ b/libappletdecoration/previewclient.h
+@@ -117,6 +117,10 @@
+     void requestShowWindowMenu(const QRect &rect) override;
+ #endif
+ 
++#if KDECORATION2_VERSION_MINOR >= 26
++    QString windowClass() const override;
++#endif
++
+     void requestClose() override;
+     void requestContextHelp() override;
+     void requestToggleMaximization(Qt::MouseButtons buttons) override;
+--- a/libappletdecoration/previewclient.cpp
++++ b/libappletdecoration/previewclient.cpp
+@@ -417,6 +417,12 @@
+ }
+ #endif
+ 
++#if KDECORATION2_VERSION_MINOR >= 26
++QString PreviewClient::windowClass() const
++{
++    return QString();
++}
++#endif
+ 
+ void PreviewClient::requestClose()
+ {
+

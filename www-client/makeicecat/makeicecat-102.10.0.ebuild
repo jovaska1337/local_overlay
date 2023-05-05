@@ -1,12 +1,12 @@
 # Copyright 2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 DESCRIPTION="Script for creating GNU Icecat tarball"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-COMMIT="10bd9dafbd9ce466720ff9539d91a3f96f482b56"
+COMMIT="15c6c2229a053cdcc064eda89cee07f18efac35d"
 
 # 89.0 and 94.0 PGP keys are the same
 SRC_URI="
@@ -26,12 +26,9 @@ RDEPEND="${BDEPEND}"
 BDEPEND="
 	app-crypt/gnupg
 	dev-vcs/mercurial
-	dev-perl/File-Rename
 	dev-python/jsonschema
 	net-misc/wget
 "
-
-PATCHES=( "${FILESDIR}/$(ver_cut 1)-icecat-rfp-ua-fix.patch" )
 
 S=""${WORKDIR}"/gnuzilla-"${COMMIT}""
 
