@@ -1,0 +1,36 @@
+--- a/makeicecat
++++ b/makeicecat
+@@ -220,6 +220,7 @@
+ 
+ fetch_l10n()
+ {
++    return
+     cd l10n
+ 
+     while read lang; do
+@@ -274,6 +274,7 @@
+     done
+ 
+     for dir in l10n/*; do
++    	break
+         if [[ $dir != l10n/compare-locales ]]; then
+             if [[ ! -e ${DATADIR}/files-to-append/${dir}/${PREFS_OUT_FILE} ]]; then
+                 cat ${DATADIR}/files-to-append/${PREFS_IN_FILE} >> ${dir}/${PREFS_OUT_FILE}
+@@ -431,7 +431,7 @@
+     cp "${DATADIR}"/newtab/*.png browser/components/newtab/data/content/tippytop/images/
+ 
+     # IceCat menu l10n
+-    /bin/sed '/appmenuitem-settings/,+1s/\(.*.label = \)\(.*\)/\1\2\nappmenuitem-icecat-settings =\n\1IceCat \2/' -i ./l10n/*/browser/browser/appmenu.ftl ./browser/locales/en-US/browser/appmenu.ftl
++    /bin/sed '/appmenuitem-settings/,+1s/\(.*.label = \)\(.*\)/\1\2\nappmenuitem-icecat-settings =\n\1IceCat \2/' -i  ./browser/locales/en-US/browser/appmenu.ftl
+ 
+     # Disable remote settings server
+     sed '/REMOTE_SETTINGS_SERVER_URL/,/^$/s/http.*"/"/' -i toolkit/modules/AppConstants.jsm
+@@ -605,7 +605,7 @@
+ "
+     find . -type f -not -iregex '.*changelog.*' -not -iregex '.*copyright.*' -not -iregex '.*third_party/rust.*' -execdir /bin/sed --follow-symlinks -i "${sed_script}" '{}' ';'
+ 
+-    find l10n -type f -execdir /bin/sed --follow-symlinks -i "s/from GNU/from Mozilla/g" '{}' ';'
++    #find l10n -type f -execdir /bin/sed --follow-symlinks -i "s/from GNU/from Mozilla/g" '{}' ';'
+ 
+     sed_script="
+ s/free and open source software/Free Software/g;

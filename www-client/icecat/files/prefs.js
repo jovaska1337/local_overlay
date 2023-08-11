@@ -207,7 +207,7 @@ pref("extensions.update.autoUpdateDefault", false);
 pref("extensions.update.enabled", false);
 pref("extensions.webcompat-reporter.enabled", false);
 pref("extensions.webcompat.enable_shims", true);
-pref("extensions.webextensions.restrictedDomains", "");
+pref("extensions.webextensions.restrictedDomains", "about:blank");
 pref("extensions.webservice.discoverURL", "");
 //pref("font.blacklist.underline_offset", "");
 pref("font.name.monospace.x-unicode", "Lucida Console");

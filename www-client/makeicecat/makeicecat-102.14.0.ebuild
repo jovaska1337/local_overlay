@@ -6,7 +6,7 @@ EAPI=8
 DESCRIPTION="Script for creating GNU Icecat tarball"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-COMMIT="b2d463b0e331795eebe3ee62f2c58c1bd05b9899"
+COMMIT="ac19d793c76732f9e5623e25fbf31287255a4ae7"
 
 # 89.0 and 94.0 PGP keys are the same
 SRC_URI="
@@ -18,7 +18,7 @@ LICENSE="GPL-3"
 SLOT="${PV}"
 KEYWORDS="~amd64"
 
-IUSE="+buildtarball"
+IUSE="+buildtarball +no-l10n"
 
 RESTRICT="buildtarball? ( network-sandbox ) mirror"
 
@@ -32,8 +32,19 @@ BDEPEND="
 
 S=""${WORKDIR}"/gnuzilla-"${COMMIT}""
 
+PATCHES=(
+	"${FILESDIR}/fix-branding.patch"
+)
+
 src_prepare() {
 	default_src_prepare
+
+	# disable langpacks
+	if use no-l10n; then
+		eapply "${FILESDIR}/no-langpacks.patch"
+		rm -r "${S}/data/files-to-append/l10n" || die
+	fi
+
 	# Making sure that latest Mozilla public key is available for verying the firefox tarball
 	gpg --import "${DISTDIR}/Mozilla_pgp_key-20210507.pgp" || die
 }

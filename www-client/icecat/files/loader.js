@@ -35,27 +35,18 @@ Services.obs.addObserver(function (subject, topic, data) {
 	for (const [msg, level] of notifications)
 		box.appendNotification("custom-userchromejs",
 			{ priority: box[`PRIORITY_${level}`], label: msg });
-
-	// remove notifications
-	notifications.length = 0;
-
 }, "browser-delayed-startup-finished");
 
 // we want to inject the script immediately
 try {
-	// get XPCOM service handles
-	const obs    = Services.obs;
-	const prefs  = Services.prefs;
-	const loader = Services.scriptloader;
-
 	// check if loader is enabled
 	try {
 		// not enabled
-		if (!prefs.getBoolPref(PREF_KEY))
+		if (!Services.prefs.getBoolPref(PREF_KEY))
 			return;
 	} catch {
 		// disable by default
-		prefs.setBoolPref(PREF_KEY, false);
+		Services.prefs.setBoolPref(PREF_KEY, false);
 		notifications.push([`userChrome.js loader disabled by default. (enable in about:config with ${PREF_KEY})`, "INFO_HIGH"]);
 		return;
 	}
@@ -105,7 +96,7 @@ try {
 
 	// try executing the userChrome.js script
 	try {
-		loader.loadSubScriptWithOptions(
+		Services.scriptloader.loadSubScriptWithOptions(
 			"chrome://custom/content/userChrome.js", { ignoreCache: true });
 	} catch (e) {
 		// print exception to console

@@ -7,9 +7,9 @@ EAPI=8
 
 FIREFOX_PATCHSET="firefox-102esr-patches-10j.tar.xz"
 
-LLVM_MAX_SLOT=15
+LLVM_MAX_SLOT=16
 
-PYTHON_COMPAT=( python3_{9..10} )
+PYTHON_COMPAT=( python3_{9..11} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 WANT_AUTOCONF="2.1"
@@ -992,29 +992,27 @@ src_install() {
 		insinto "${MOZILLA_FIVE_HOME}"
 
 		# get config filename from autoconfig.js
-		local name="$(grep 'general\.config\.filename' autoconfig.js \
+		local name="$(grep 'general\.config\.filename' "${FILESDIR}/autoconfig.js" \
 			| cut -d, -f2 | grep -o '"[^"]\+"' | cut -d\" -f2)"
 
 		# construct autoconfig.js
-		echo "// autoconfig.js generated on $(date --rfc-email)" > "${TEMPDIR}/autoconfig.js"
-		echo >> "${TEMPDIR}/autoconfig.js"
-		cat "${FILESDIR}/autoconfig.js" >> "${TEMPDIR}/autoconfig.js"
-		# this is not needed yet as of ESR 102.13
-		use userchrome-js && echo $'\n'"pref(\"general.config.sandbox\", 0);" >> "${TEMPDIR}/autoconfig.js"
+		echo "// autoconfig.js generated on $(date --rfc-email)"$'\n' > "${T}/autoconfig.js"
+		cat "${FILESDIR}/autoconfig.js" >> "${T}/autoconfig.js"
+		# this is not needed yet as of ESR 102
+		use userchrome-js && echo $'\n'"pref(\"general.config.sandbox\", 0);" >> "${T}/autoconfig.js"
 
 		# construct config file
-		echo "// ${name} generated on $(date --rfc-email)"$'\n' > "${TEMPDIR}/${name}"
-		echo >> "${TEMPDIR}/${name}"
-		cat "${FILESDIR}/prefs.js" >> "${TEMPDIR}/${name}"
+		echo "// ${name} generated on $(date --rfc-email)"$'\n' > "${T}/${name}"
+		cat "${FILESDIR}/prefs.js" >> "${T}/${name}"
 		if use userchrome-js; then
-			echo >> "${TEMPDIR}/${name}"
-			cat "${FILESDIR}/loader.js" >> "${TEMPDIR}/${name}"
+			echo >> "${T}/${name}"
+			cat "${FILESDIR}/loader.js" >> "${T}/${name}"
 		fi
 
 		# install config file and autoconfig.js
-		newins "${TEMPDIR}/${name}" "${name}"
+		newins "${T}/${name}" "${name}"
 		insinto "${MOZILLA_FIVE_HOME}/defaults/pref"
-		newins "${TEMPDIR}/autoconfig.js" autoconfig.js
+		newins "${T}/autoconfig.js" autoconfig.js
 	fi
 
 	# Install system-wide preferences
