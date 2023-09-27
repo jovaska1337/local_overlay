@@ -1,0 +1,25 @@
+From 19ccbb461ee8b53d17df6542e2daf9c1cbf966f1 Mon Sep 17 00:00:00 2001
+From: Chippy <chippy@classictetris.net>
+Date: Tue, 12 Sep 2023 10:58:08 +0200
+Subject: [PATCH 07/13] the extension of these files was changed upstream
+
+---
+ makeicecat | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/makeicecat b/makeicecat
+index d338bc4..b792a55 100755
+--- a/makeicecat
++++ b/makeicecat
+@@ -433,7 +433,7 @@ EOF
+     /bin/sed '/appmenuitem-settings/,+1s/\(.*.label = \)\(.*\)/\1\2\nappmenuitem-icecat-settings =\n\1IceCat \2/' -i ./l10n/*/browser/browser/appmenu.ftl ./browser/locales/en-US/browser/appmenu.ftl
+ 
+     # Disable remote settings server
+-    sed '/REMOTE_SETTINGS_SERVER_URL/,/^$/s/http.*"/"/' -i toolkit/modules/AppConstants.jsm
++    sed '/REMOTE_SETTINGS_SERVER_URL/,/^$/s/http.*"/"/' -i toolkit/modules/AppConstants.sys.mjs
+ 
+     # Build on trisquel
+     sed '/^DEBIAN_DISTROS/s/$/\n    "trisquel",/' -i ./python/mozboot/mozboot/bootstrap.py
+-- 
+2.40.1
+

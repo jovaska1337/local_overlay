@@ -1,0 +1,31 @@
+From 07015511368d83cc4e34d6bed408799358479dc1 Mon Sep 17 00:00:00 2001
+From: g <g@debian-BULLSEYE-live-builder-AMD64>
+Date: Mon, 11 Sep 2023 11:46:13 +0200
+Subject: [PATCH 01/13] version and checksum for 115
+
+---
+ makeicecat | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/makeicecat b/makeicecat
+index 5893649..95d8fff 100755
+--- a/makeicecat
++++ b/makeicecat
+@@ -21,11 +21,11 @@
+ 
+ 
+ # metadata
+-readonly FFMAJOR=102
+-readonly FFMINOR=15
++readonly FFMAJOR=115
++readonly FFMINOR=1
+ readonly FFSUB=0
+ readonly GNUVERSION=1
+-readonly SOURCEBALL_CHECKSUM='81fa590408f5a3af8f004d839ac47fb4121e05fe717334445cec9ca55d8746af'
++readonly SOURCEBALL_CHECKSUM='a7c92e576b678854c0ea83062e7d0c97936947fca30865129f47734e806e17a6'
+ readonly SOURCEBALL_SIGNINGKEY='14F26682D0916CDD81E37B6D61B7B526D98F0353'
+ readonly FFVERSION=${FFMAJOR}.${FFMINOR}.${FFSUB}
+ readonly SOURCEBALL=firefox-${FFVERSION}esr.source.tar.xz
+-- 
+2.40.1
+

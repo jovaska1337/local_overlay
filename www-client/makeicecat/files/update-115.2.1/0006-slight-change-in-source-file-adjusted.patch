@@ -1,0 +1,25 @@
+From ff0ee6de5e6023f5c42766e5a05ea244047d58dc Mon Sep 17 00:00:00 2001
+From: Chippy <chippy@classictetris.net>
+Date: Tue, 12 Sep 2023 10:49:29 +0200
+Subject: [PATCH 06/13] slight change in source file, adjusted
+
+---
+ makeicecat | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/makeicecat b/makeicecat
+index ee0e972..d338bc4 100755
+--- a/makeicecat
++++ b/makeicecat
+@@ -326,7 +326,7 @@ configure()
+     sed '/layout_endpoint:/,/http/s/"http.*/"",/' -i $activity_stream
+     sed '/name: "telemetry"/,/value/s/value: true/value: false/' -i $activity_stream
+     sed '/name: "system\.topstories"/,/},/s/.*!!locales.*/false/' -i $activity_stream
+-    sed 's/.Ubuntu., //' -i browser/components/newtab/css/activity-stream*.css
++    sed 's/Ubuntu, //' -i browser/components/newtab/css/activity-stream*.css
+ 
+     sed '/^]$/d' -i browser/components/newtab/data/content/tippytop/top_sites.json
+     sed 's/}$/},/' -i browser/components/newtab/data/content/tippytop/top_sites.json
+-- 
+2.40.1
+

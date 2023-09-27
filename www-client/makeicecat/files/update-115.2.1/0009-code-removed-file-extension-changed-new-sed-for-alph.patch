@@ -1,0 +1,41 @@
+From 8e08be087e1afefcbaf694291d9b272831cab0ac Mon Sep 17 00:00:00 2001
+From: Chippy <chippy@classictetris.net>
+Date: Tue, 12 Sep 2023 15:50:32 +0200
+Subject: [PATCH 09/13] code removed, file extension changed, new sed for
+ alphabetical order
+
+---
+ makeicecat | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/makeicecat b/makeicecat
+index 0fd893a..f524130 100755
+--- a/makeicecat
++++ b/makeicecat
+@@ -442,7 +442,7 @@ EOF
+ configure_search()
+ {
+     # Leak less info to DuckDuckGo.
+-    # Chippy 20230912 this has been removed upstream
++    # Chippy 20230912 this whole part has been removed upstream
+     #sed '/"params"/,/],/d' -i browser/components/search/extensions/ddg/manifest.json
+ 
+     # Default DDG to HTML search.
+@@ -634,9 +634,13 @@ s/OpenSource/Free Software/g;
+     find . -name region.properties | xargs -i /bin/sed 's_https://www\.mibbit.*__' -i {}
+ 
+     # Set migrator scripts
+-    cp browser/components/migration/IceCatProfileMigrator.jsm browser/components/migration/FirefoxProfileMigrator.sys.mjs
++    cp browser/components/migration/IceCatProfileMigrator.sys.mjs browser/components/migration/FirefoxProfileMigrator.sys.mjs
+     sed 's/IceCat/Firefox/g; s/icecat/firefox/g' -i browser/components/migration/FirefoxProfileMigrator.sys.mjs
+ 
++    # Chippy 20230912 introducing this as we need alphabetical order in the list, apologies for the brutality, bit complex for one pass only with sed
++    sed 's/har-metadata-collector.js/TEMP_STRING/g; s/icecat-data-provider.js/har-metadata-collector.js/g; s/TEMP_STRING/icecat-data-provider.js/g' -i devtools/client/netmonitor/src/connector/moz.build
++
++
+     # Copy js settings
+     cat "${DATADIR}"/settings.js >> browser/app/profile/icecat.js
+ 
+-- 
+2.40.1
+

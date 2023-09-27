@@ -1,0 +1,25 @@
+From 28b83381f25636435473f6256359d2733676cb3d Mon Sep 17 00:00:00 2001
+From: Chippy <chippy@classictetris.net>
+Date: Tue, 12 Sep 2023 10:32:20 +0200
+Subject: [PATCH 05/13] the extension of these files was changed upstream
+
+---
+ makeicecat | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/makeicecat b/makeicecat
+index 95d8fff..ee0e972 100755
+--- a/makeicecat
++++ b/makeicecat
+@@ -314,7 +314,7 @@ configure()
+     # These are not condensed into a single sed script so that it
+     # fails on individual commands that didn't change the source
+     local activity_stream=browser/components/newtab/lib/ActivityStream.jsm
+-    sed '/^const DEFAULT_SITES/,/^])\;/c const DEFAULT_SITES = new Map\([[""]]\);' -i browser/components/newtab/lib/DefaultSites.jsm
++    sed '/^const DEFAULT_SITES/,/^])\;/c const DEFAULT_SITES = new Map\([[""]]\);' -i browser/components/newtab/lib/DefaultSites.sys.mjs
+     sed '/"showSponsored"/,/value/s/value: true/value: false/' -i $activity_stream
+     sed '/  "telemetry"/,/value/s/value: true/value: false/' -i $activity_stream
+     sed '/"section\.highlights\.includePocket"/,/value/s/value: true/value: false/' -i $activity_stream
+-- 
+2.40.1
+

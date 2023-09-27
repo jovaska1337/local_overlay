@@ -1,0 +1,55 @@
+From bbc0655a792d61f8e23b5be9fbade761c07123ba Mon Sep 17 00:00:00 2001
+From: g <g@debian-BULLSEYE-live-builder-AMD64>
+Date: Mon, 11 Sep 2023 12:04:38 +0200
+Subject: [PATCH 02/13] adjusted patch file
+
+---
+ data/patches/about-addons.patch | 29 ++++++++++++++++-------------
+ 1 file changed, 16 insertions(+), 13 deletions(-)
+
+diff --git a/data/patches/about-addons.patch b/data/patches/about-addons.patch
+index dae5a0d..4427c46 100644
+--- a/data/patches/about-addons.patch
++++ b/data/patches/about-addons.patch
+@@ -1,22 +1,25 @@
+ --- a/toolkit/mozapps/extensions/content/aboutaddons.html
+ +++ b/toolkit/mozapps/extensions/content/aboutaddons.html
+-@@ -65,8 +65,8 @@
++@@ -174,12 +174,12 @@
+      <template name="addon-page-header">
+        <div class="sticky-container">
+          <div class="main-search">
+--          <label for="search-addons" class="search-label" data-l10n-id="default-heading-search-label"></label>
+--          <search-addons data-l10n-id="search-header-shortcut" data-l10n-attrs="key"></search-addons>
+-+          <label hidden="true" for="search-addons" class="search-label" data-l10n-id="default-heading-search-label"></label>
+-+          <search-addons hidden="true" data-l10n-id="search-header-shortcut" data-l10n-attrs="key"></search-addons>
++-          <label
+++          <label hidden="true"
++             for="search-addons"
++             class="search-label"
++             data-l10n-id="default-heading-search-label"
++           ></label>
++-          <search-addons></search-addons>
+++          <search-addons hidden="true"></search-addons>
+          </div>
+          <div class="main-heading">
+-           <button class="back-button" action="go-back" data-l10n-id="header-back-button" hidden></button>
+-@@ -306,7 +306,7 @@
+-         <button class="primary" action="open-amo" data-l10n-id="find-more-addons"></button>
++           <button
++@@ -660,6 +660,7 @@
+        </div>
+        <div class="view-footer-item">
+--        <a class="privacy-policy-link" data-l10n-id="privacy-policy" target="_blank"></a>
+-+        <a hidden="true" class="privacy-policy-link" data-l10n-id="privacy-policy" target="_blank"></a>
+-       </div>
+-     </template>
+- 
++         <a
+++          hidden="true"
++           class="privacy-policy-link"
++           data-l10n-id="privacy-policy"
++           target="_blank"
+-- 
+2.40.1
+

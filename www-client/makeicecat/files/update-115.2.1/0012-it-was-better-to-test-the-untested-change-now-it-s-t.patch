@@ -1,0 +1,27 @@
+From 1b59a1f105a00dd7588c35f674fff17330e9a114 Mon Sep 17 00:00:00 2001
+From: Chippy <chippy@classictetris.net>
+Date: Tue, 12 Sep 2023 23:15:05 +0200
+Subject: [PATCH 12/13] it was better to test the untested change, now it's
+ tested
+
+---
+ makeicecat | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/makeicecat b/makeicecat
+index 28d7ba0..b30148a 100755
+--- a/makeicecat
++++ b/makeicecat
+@@ -528,7 +528,8 @@ apply_branding()
+ 
+     # Custom bookmarks the content of the target file has changed and now endif is present more than once
+     #sed '/ifndef/,/endif/d' -i browser/base/content/default-bookmarks.html
+-    tac browser/base/content/default-bookmarks.html | sed '/endif/,/ifndef/d' | tac > tmpfile > browser/base/content/default-bookmarks.html && rm tmpfile
++    tac browser/base/content/default-bookmarks.html | /bin/sed '/endif/,/ifndef/d' | tac > tmpfile 
++    cat tmpfile > browser/base/content/default-bookmarks.html && rm tmpfile
+ 
+     # Custom legal about pages
+     find l10n -wholename '*/brand.dtd' | xargs /bin/sed 's/trademarkInfo.part1.*/trademarkInfo.part1 "The IceCat logo is Copyright 2008-2015 Free Software Foundation, released under the terms of the GNU Lesser General Public License, version 3 or any later version.">/' -i
+-- 
+2.40.1
+
