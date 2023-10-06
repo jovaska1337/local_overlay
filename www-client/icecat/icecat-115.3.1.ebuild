@@ -1,31 +1,40 @@
 # Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-# based on firefox-102.7.0.ebuild
+# makceiceat is integrated into this ebuild in src_prepare()
+# based on firefox-115.2.1.ebuild
 
 EAPI=8
 
-FIREFOX_PATCHSET="firefox-102esr-patches-10j.tar.xz"
+# this commit should have version numbers that match this ebuild
+# as the firefox source fetching is integrated here as well to
+# utilize the portage distfiles cache
+COMMIT="1b0f0ba84716023657dd7dff72cb408e35380a60"
+
+# this comes from firefox-${PV}.ebuild
+FIREFOX_PATCHSET="firefox-115esr-patches-06.tar.xz"
 
 LLVM_MAX_SLOT=16
 
-PYTHON_COMPAT=( python3_{9..11} )
+PYTHON_COMPAT=( python3_{10..11} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 WANT_AUTOCONF="2.1"
 
-VIRTUALX_REQUIRED="pgo"
+VIRTUALX_REQUIRED="manual"
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info \
-	llvm multiprocessing pax-utils python-any-r1 toolchain-funcs \
-	virtualx xdg
+	llvm multiprocessing optfeature pax-utils python-any-r1 toolchain-funcs \
+	virtualx xdg l10n
 
 PATCH_URIS=(
-	https://dev.gentoo.org/~{juippis,whissi,slashbeast}/mozilla/patchsets/${FIREFOX_PATCHSET}
+	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
 )
 
+# download firefox source using portage (makeicecat needs to be patched for this)
 SRC_URI="
-	!buildtarball? ( icecat-${PV}-gnu1.tar.bz2 )
+	https://archive.mozilla.org/pub/firefox/releases/${PV}esr/source/firefox-${PV}esr.source.tar.xz -> firefox-${PV}esr.source.tar.xz
+	https://git.savannah.gnu.org/cgit/gnuzilla.git/snapshot/gnuzilla-${COMMIT}.tar.gz -> makeicecat-${PV}.tar.gz
 	${PATCH_URIS[@]}
 "
 
@@ -33,35 +42,46 @@ DESCRIPTION="GNU IceCat Web Browser"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
 KEYWORDS="~amd64 ~x86"
-RESTRICT="mirror"
+RESTRICT="mirror network-sandbox" # makeicecat needs network access
 
 SLOT="0/$(ver_cut 1)"
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
 
 IUSE="+clang cpu_flags_arm_neon dbus debug hardened hwaccel"
 IUSE+=" jack libproxy lto +openh264 pgo pulseaudio sndio selinux"
-IUSE+=" +system-av1 +system-harfbuzz +system-icu +system-jpeg +system-libevent +system-libvpx +system-png +system-python-libs +system-webp"
-IUSE+=" wayland wifi"
+IUSE+=" +system-av1 +system-harfbuzz +system-icu +system-jpeg +system-libevent +system-libvpx +system-png system-python-libs +system-webp"
+IUSE+=" wayland wifi +X"
 
 # Firefox-only IUSE
 IUSE+=" geckodriver screencast"
 IUSE+=" +buildtarball"
-IUSE+=" unity-menubar custom-fixes userchrome-js"
+IUSE+=" unity-menubar custom-fixes userchrome-js kde"
 
-REQUIRED_USE="debug? ( !system-av1 )
+REQUIRED_USE="|| ( X wayland )
+	debug? ( !system-av1 )
 	pgo? ( lto )
-	wayland? ( dbus )
 	wifi? ( dbus )"
 
 # Firefox-only REQUIRED_USE flags
-REQUIRED_USE+=" screencast? ( wayland )"
 REQUIRED_USE+=" unity-menubar? ( dbus )"
 
+# FIXME: I don't know what the KDE patches from OpenSUSE require
 FF_ONLY_DEPEND="!www-client/icecat:0
 	screencast? ( media-video/pipewire:= )
-	selinux? ( sec-policy/selinux-mozilla )"
+	selinux? ( sec-policy/selinux-mozilla )
+	unity-menubar? ( dev-libs/libdbusmenu )"
+
 BDEPEND="${PYTHON_DEPS}
 	|| (
+		(
+			sys-devel/clang:16
+			sys-devel/llvm:16
+			clang? (
+				sys-devel/lld:16
+				virtual/rust:0/llvm-16
+				pgo? ( =sys-libs/compiler-rt-sanitizers-16*[profile] )
+			)
+		)
 		(
 			sys-devel/clang:15
 			sys-devel/llvm:15
@@ -71,33 +91,39 @@ BDEPEND="${PYTHON_DEPS}
 				pgo? ( =sys-libs/compiler-rt-sanitizers-15*[profile] )
 			)
 		)
-		(
-			sys-devel/clang:14
-			sys-devel/llvm:14
-			clang? (
-				sys-devel/lld:14
-				virtual/rust:0/llvm-14
-				pgo? ( =sys-libs/compiler-rt-sanitizers-14*[profile] )
-			)
-		)
 	)
-	!clang? ( virtual/rust )
+	app-alternatives/awk
 	app-arch/unzip
 	app-arch/zip
 	>=dev-util/cbindgen-0.24.3
 	net-libs/nodejs
 	virtual/pkgconfig
+	!clang? ( >=virtual/rust-1.65 )
 	amd64? ( >=dev-lang/nasm-2.14 )
 	x86? ( >=dev-lang/nasm-2.14 )
-	buildtarball? ( ~www-client/makeicecat-"${PV}"[buildtarball] )"
+	pgo? (
+		X? (
+			sys-devel/gettext
+			x11-base/xorg-server[xvfb]
+			x11-apps/xhost
+		)
+		!X? (
+			>=gui-libs/wlroots-0.15.1-r1[tinywl]
+			x11-misc/xkeyboard-config
+		)
+	)
+	app-crypt/gnupg
+	dev-vcs/mercurial
+	dev-python/jsonschema
+	net-misc/wget"
 
 COMMON_DEPEND="${FF_ONLY_DEPEND}
 	>=app-accessibility/at-spi2-core-2.46.0:2
 	dev-libs/expat
 	dev-libs/glib:2
 	dev-libs/libffi:=
-	>=dev-libs/nss-3.79.2
-	>=dev-libs/nspr-4.34
+	>=dev-libs/nss-3.90
+	>=dev-libs/nspr-4.35
 	media-libs/alsa-lib
 	media-libs/fontconfig
 	media-libs/freetype
@@ -105,19 +131,8 @@ COMMON_DEPEND="${FF_ONLY_DEPEND}
 	media-video/ffmpeg
 	sys-libs/zlib
 	virtual/freedesktop-icon-theme
-	virtual/opengl
-	x11-libs/cairo[X]
+	x11-libs/cairo
 	x11-libs/gdk-pixbuf
-	x11-libs/gtk+:3[X]
-	x11-libs/libX11
-	x11-libs/libXcomposite
-	x11-libs/libXdamage
-	x11-libs/libXext
-	x11-libs/libXfixes
-	x11-libs/libXrandr
-	x11-libs/libXtst
-	x11-libs/libxcb:=
-	x11-libs/libxkbcommon[X]
 	x11-libs/pango
 	x11-libs/pixman
 	dbus? (
@@ -125,14 +140,16 @@ COMMON_DEPEND="${FF_ONLY_DEPEND}
 		sys-apps/dbus
 	)
 	jack? ( virtual/jack )
-	libproxy? ( net-libs/libproxy )
 	pulseaudio? (
 		|| (
-			media-sound/pulseaudio
-			>=media-sound/apulse-0.1.12-r4
+			media-libs/libpulse
+			>=media-sound/apulse-0.1.12-r4[sdk]
 		)
 	)
+	libproxy? ( net-libs/libproxy )
+	selinux? ( sec-policy/selinux-mozilla )
 	sndio? ( >=media-sound/sndio-1.8.0-r1 )
+	screencast? ( media-video/pipewire:= )
 	system-av1? (
 		>=media-libs/dav1d-1.0.0:=
 		>=media-libs/libaom-1.0.0:=
@@ -141,15 +158,15 @@ COMMON_DEPEND="${FF_ONLY_DEPEND}
 		>=media-gfx/graphite2-1.3.13
 		>=media-libs/harfbuzz-2.8.1:0=
 	)
-	system-icu? ( >=dev-libs/icu-71.1:= )
+	system-icu? ( >=dev-libs/icu-73.1:= )
 	system-jpeg? ( >=media-libs/libjpeg-turbo-1.2.1 )
 	system-libevent? ( >=dev-libs/libevent-2.1.12:0=[threads(+)] )
 	system-libvpx? ( >=media-libs/libvpx-1.8.2:0=[postproc] )
 	system-png? ( >=media-libs/libpng-1.6.35:0=[apng] )
 	system-webp? ( >=media-libs/libwebp-1.1.0:0= )
 	wayland? (
+		>=media-libs/libepoxy-1.5.10-r1
 		x11-libs/gtk+:3[wayland]
-		x11-libs/libdrm
 		x11-libs/libxkbcommon[wayland]
 	)
 	wifi? (
@@ -159,16 +176,35 @@ COMMON_DEPEND="${FF_ONLY_DEPEND}
 			sys-apps/dbus
 		)
 	)
-	unity-menubar? ( dev-libs/libdbusmenu )"
+	X? (
+		virtual/opengl
+		x11-libs/cairo[X]
+		x11-libs/gtk+:3[X]
+		x11-libs/libX11
+		x11-libs/libXcomposite
+		x11-libs/libXdamage
+		x11-libs/libXext
+		x11-libs/libXfixes
+		x11-libs/libxkbcommon[X]
+		x11-libs/libXrandr
+		x11-libs/libXtst
+		x11-libs/libxcb:=
+	)"
 
 RDEPEND="${COMMON_DEPEND}
+	hwaccel? (
+		media-video/libva-utils
+		sys-apps/pciutils
+	)
 	jack? ( virtual/jack )
 	openh264? ( media-libs/openh264:*[plugin] )"
 
 DEPEND="${COMMON_DEPEND}
-	x11-base/xorg-proto
-	x11-libs/libICE
-	x11-libs/libSM"
+	X? (
+		x11-base/xorg-proto
+		x11-libs/libICE
+		x11-libs/libSM
+	)"
 
 S="${WORKDIR}/${PN}-${PV%_*}"
 
@@ -178,7 +214,7 @@ llvm_check_deps() {
 		return 1
 	fi
 
-	if use clang ; then
+	if use clang && ! tc-ld-is-mold ; then
 		if ! has_version -b "sys-devel/lld:${LLVM_SLOT}" ; then
 			einfo "sys-devel/lld:${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 			return 1
@@ -221,6 +257,7 @@ MOZ_LANGS+=( es-CL )
 MOZ_LANGS+=( es-MX )
 MOZ_LANGS+=( fa )
 MOZ_LANGS+=( ff )
+MOZ_LANGS+=( fur )
 MOZ_LANGS+=( gn )
 MOZ_LANGS+=( gu-IN )
 MOZ_LANGS+=( hi-IN )
@@ -234,6 +271,7 @@ MOZ_LANGS+=( mr )
 MOZ_LANGS+=( my )
 MOZ_LANGS+=( ne-NP )
 MOZ_LANGS+=( oc )
+MOZ_LANGS+=( sc )
 MOZ_LANGS+=( sco )
 MOZ_LANGS+=( si )
 MOZ_LANGS+=( son )
@@ -265,6 +303,7 @@ mozilla_set_globals() {
 			xflag=${lang}
 		fi
 
+		# makeicecat uses these to select included locales
 		IUSE+=" l10n_${xflag/[_@]/-}"
 	done
 }
@@ -375,6 +414,63 @@ mozconfig_use_with() {
 	mozconfig_add_options_ac "$(use ${1} && echo +${1} || echo -${1})" "${flag}"
 }
 
+# This is a straight copypaste from toolchain-funcs.eclass's 'tc-ld-is-lld', and is temporarily
+# placed here until toolchain-funcs.eclass gets an official support for mold linker.
+# Please see:
+# https://github.com/gentoo/gentoo/pull/28366 ||
+# https://github.com/gentoo/gentoo/pull/28355
+tc-ld-is-mold() {
+	local out
+
+	# Ensure ld output is in English.
+	local -x LC_ALL=C
+
+	# First check the linker directly.
+	out=$($(tc-getLD "$@") --version 2>&1)
+	if [[ ${out} == *"mold"* ]] ; then
+		return 0
+	fi
+
+	# Then see if they're selecting mold via compiler flags.
+	# Note: We're assuming they're using LDFLAGS to hold the
+	# options and not CFLAGS/CXXFLAGS.
+	local base="${T}/test-tc-linker"
+	cat <<-EOF > "${base}.c"
+	int main() { return 0; }
+	EOF
+	out=$($(tc-getCC "$@") ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -Wl,--version "${base}.c" -o "${base}" 2>&1)
+	rm -f "${base}"*
+	if [[ ${out} == *"mold"* ]] ; then
+		return 0
+	fi
+
+	# No mold here!
+	return 1
+}
+
+virtwl() {
+	debug-print-function ${FUNCNAME} "$@"
+
+	[[ $# -lt 1 ]] && die "${FUNCNAME} needs at least one argument"
+	[[ -n $XDG_RUNTIME_DIR ]] || die "${FUNCNAME} needs XDG_RUNTIME_DIR to be set; try xdg_environment_reset"
+	tinywl -h >/dev/null || die 'tinywl -h failed'
+
+	# TODO: don't run addpredict in utility function. WLR_RENDERER=pixman doesn't work
+	addpredict /dev/dri
+	local VIRTWL VIRTWL_PID
+	coproc VIRTWL { WLR_BACKENDS=headless exec tinywl -s 'echo $WAYLAND_DISPLAY; read _; kill $PPID'; }
+	local -x WAYLAND_DISPLAY
+	read WAYLAND_DISPLAY <&${VIRTWL[0]}
+
+	debug-print "${FUNCNAME}: $@"
+	"$@"
+	local r=$?
+
+	[[ -n $VIRTWL_PID ]] || die "tinywl exited unexpectedly"
+	exec {VIRTWL[0]}<&- {VIRTWL[1]}>&-
+	return $r
+}
+
 pkg_pretend() {
 	if use pgo ; then
 		if ! has usersandbox $FEATURES ; then
@@ -390,17 +486,6 @@ pkg_pretend() {
 	fi
 
 	check-reqs_pkg_pretend
-}
-
-pkg_nofetch() {
-	if ! use buildtarball; then
-		einfo "You have not enabled buildtarball use flag, therefore you will have to"
-		einfo "build the tarball manually and place it in your distfiles directory."
-		einfo "You may find the script for building the tarball here"
-		einfo "https://git.savannah.gnu.org/cgit/gnuzilla.git/, but make sure it is the"
-		einfo "right version."
-		einfo "The output of the script should be icecat-"${PV}"-gnu1.tar.bz2"
-	fi
 }
 
 pkg_setup() {
@@ -421,7 +506,7 @@ pkg_setup() {
 
 	llvm_pkg_setup
 
-	if use clang && use lto ; then
+	if use clang && use lto && tc-ld-is-lld ; then
 		local version_lld=$(ld.lld --version 2>/dev/null | awk '{ print $2 }')
 		[[ -n ${version_lld} ]] && version_lld=$(ver_cut 1 "${version_lld}")
 		[[ -z ${version_lld} ]] && die "Failed to read ld.lld version!"
@@ -459,6 +544,14 @@ pkg_setup() {
 	addpredict /proc/self/oom_score_adj
 
 	if use pgo ; then
+		# Update 105.0: "/proc/self/oom_score_adj" isn't enough anymore with pgo, but not sure
+		# whether that's due to better OOM handling by Firefox (bmo#1771712), or portage
+		# (PORTAGE_SCHEDULING_POLICY) update...
+		addpredict /proc
+
+		# May need a wider addpredict when using wayland+pgo.
+		addpredict /dev/dri
+
 		# Allow access to GPU during PGO run
 		local ati_cards mesa_cards nvidia_cards render_cards
 		shopt -s nullglob
@@ -501,20 +594,76 @@ pkg_setup() {
 }
 
 src_unpack() {
-	if use buildtarball; then
-		unpack "/usr/src/makeicecat-${PV}/output/icecat-${PV}-gnu1.tar.bz2" \
-			|| eerror "Tarball is missing, check that www-client/makeicecat has use flag buildtarball enabled."
-	else
-		unpack "icecat-${PV}-gnu1.tar.bz2"
-	fi
-	unpack "${FIREFOX_PATCHSET}"
+	# unpack sources
+	default_src_unpack
 
-	# this patch doesn't apply for whatever reason
-	# (the icecat upstream hasn't made any build system changes to my knowledge)
-	rm "${WORKDIR}"/firefox-patches/*-python-3.11-compatibility.patch
+	# set source directory to makeicecat sources
+	ln -s "${WORKDIR}/gnuzilla-${COMMIT}" "$S"
+}
+
+_makeicecat() {
+	# disable unnecessary makeicecat phases
+	local disable=( fetch_source verify_sources extract_sources finalize_sourceball )
+	local phase
+	for phase in "${disable[@]}"; do
+		sed "s/^\\s*${phase}\\s*$/#${phase}/g" -i "${S}/makeicecat" || die
+	done
+
+	# add custom code after prepare_env
+	sed "s/^\\s*prepare_env\\s*$/prepare_env \&\& source after_env.sh || exit 1/g" -i "${S}/makeicecat" || die
+
+	# run the following after prepare_env in makeicecat
+	echo "#!/bin/bash" > after_env.sh && chmod +x after_env.sh || die
+
+	# this is normally done by fetch_source
+	echo "cd output" >> after_env.sh
+
+	# use already unpacked firefox sources via symlink
+	echo "ln -s '${S}/../firefox-${PV}' 'icecat-${PV}'" >> after_env.sh
+
+	# add selected locales to build
+	echo -n > "${WORKDIR}/firefox-${PV}/browser/locales/shipped-locales" || die
+	local flag
+	for flag in $IUSE; do
+		# strip possible +
+		flag="${flag##+}"
+
+		# not lang flag
+		[[ "$flag" != l10n_* ]] && continue
+
+		# not using this flag
+		use "$flag" || continue
+
+		# strip l10n
+		flag="${flag##l10n_}"
+
+		# add locale
+		einfo "Adding locale ${flag}"
+		echo "$flag" >> "${WORKDIR}/firefox-${PV}/browser/locales/shipped-locales"
+	done
+
+	# append files conditionally (ie. if target langpack exists)
+	eapply "${FILESDIR}/patches/makeicecat-cond-append.patch"
+
+	# no locales, need to patch
+	if [[ ! "$flag" ]]; then
+		eapply "${FILESDIR}/patches/makeicecat-no-l10n.patch"
+	fi
+
+	# run makeicecat
+	einfo "Running makeicecat ..."
+	./makeicecat || die
 }
 
 src_prepare() {
+	# run makeicecat
+	_makeicecat
+
+	# switch source to generated icecat sources
+	rm "$S"
+	ln -s "${WORKDIR}/firefox-${PV}" "$S"
+	cd "$S"
+
 	if use lto; then
 		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
 	fi
@@ -551,7 +700,16 @@ src_prepare() {
 			 "${S}/mobile/android/installer/package-manifest.in" || die
 		sed -i '/@BINPATH@\/browser\/extensions/d' \
 			"${S}/browser/installer/package-manifest.in" || die
-		eapply "${FILESDIR}/patches/disable-extensions.patch" || die
+		eapply "${FILESDIR}/patches/disable-extensions.patch"
+
+		# OpenSUSE gconf proxy fix
+		eapply "${FILESDIR}/patches/$(ver_cut 1)-gconf-proxy.patch"
+	fi
+
+	# KDE integration from OpenSUSE
+	if use kde; then
+		eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-toolkit.patch"
+		eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-browser.patch"
 	fi
 
 	# Allow user to apply any additional patches without modifing ebuild
@@ -584,6 +742,7 @@ src_prepare() {
 		|| die "sed failed to disable ccache stats call"
 
 	einfo "Removing pre-built binaries ..."
+
 	find "${S}"/third_party -type f \( -name '*.so' -o -name '*.o' \) -print -delete || die
 
 	# clear all vendor checksums so patches won't cause build failures
@@ -613,14 +772,21 @@ src_configure() {
 	if use clang; then
 		# Force clang
 		einfo "Enforcing the use of clang due to USE=clang ..."
+
+		local version_clang=$(clang --version 2>/dev/null | grep -F -- 'clang version' | awk '{ print $3 }')
+		[[ -n ${version_clang} ]] && version_clang=$(ver_cut 1 "${version_clang}")
+		[[ -z ${version_clang} ]] && die "Failed to read clang version!"
+
 		if tc-is-gcc; then
 			have_switched_compiler=yes
 		fi
+
 		AR=llvm-ar
-		CC=${CHOST}-clang
-		CXX=${CHOST}-clang++
+		CC=${CHOST}-clang-${version_clang}
+		CXX=${CHOST}-clang++-${version_clang}
 		NM=llvm-nm
 		RANLIB=llvm-ranlib
+
 	elif ! use clang && ! tc-is-gcc ; then
 		# Force gcc
 		have_switched_compiler=yes
@@ -638,7 +804,8 @@ src_configure() {
 		strip-unsupported-flags
 	fi
 
-	# Ensure we use correct toolchain
+	# Ensure we use correct toolchain,
+	# AS is used in a non-standard way by upstream, #bmo1654031
 	export HOST_CC="$(tc-getBUILD_CC)"
 	export HOST_CXX="$(tc-getBUILD_CXX)"
 	export AS="$(tc-getCC) -c"
@@ -663,10 +830,9 @@ src_configure() {
 
 	# Initialize MOZCONFIG
 	mozconfig_add_options_ac '' --enable-application=browser
+	mozconfig_add_options_ac '' --enable-project=browser
 
 	# Set Gentoo defaults
-	export MOZILLA_OFFICIAL=1
-
 	mozconfig_add_options_ac 'Gentoo default' \
 		--allow-addon-sideload \
 		--disable-cargo-incremental \
@@ -676,13 +842,17 @@ src_configure() {
 		--disable-install-strip \
 		--disable-parental-controls \
 		--disable-strip \
+		--disable-tests \
 		--disable-updater \
+		--disable-wmf \
+		--enable-legacy-profile-creation \
 		--enable-negotiateauth \
 		--enable-new-pass-manager \
 		--enable-official-branding \
 		--enable-release \
 		--enable-system-ffi \
 		--enable-system-pixman \
+		--enable-system-policies \
 		--host="${CBUILD:-${CHOST}}" \
 		--libdir="${EPREFIX}/usr/$(get_libdir)" \
 		--prefix="${EPREFIX}/usr" \
@@ -706,7 +876,8 @@ src_configure() {
 	# For future keywording: This is currently (97.0) only supported on:
 	# amd64, arm, arm64 & x86.
 	# Might want to flip the logic around if Firefox is to support more arches.
-	if use ppc64; then
+	# bug 833001, bug 903411#c8
+	if use ppc64 || use riscv; then
 		mozconfig_add_options_ac '' --disable-sandbox
 	else
 		mozconfig_add_options_ac '' --enable-sandbox
@@ -742,21 +913,28 @@ src_configure() {
 
 	mozconfig_use_enable wifi necko-wifi
 
-	if use wayland ; then
+	if use X && use wayland ; then
 		mozconfig_add_options_ac '+x11+wayland' --enable-default-toolkit=cairo-gtk3-x11-wayland
+	elif ! use X && use wayland ; then
+		mozconfig_add_options_ac '+wayland' --enable-default-toolkit=cairo-gtk3-wayland-only
 	else
 		mozconfig_add_options_ac '+x11' --enable-default-toolkit=cairo-gtk3
 	fi
 
 	if use lto ; then
 		if use clang ; then
-			# Upstream only supports lld when using clang
-			mozconfig_add_options_ac "forcing ld=lld due to USE=clang and USE=lto" --enable-linker=lld
+			# Upstream only supports lld or mold when using clang.
+			if tc-ld-is-mold ; then
+				mozconfig_add_options_ac "using ld=mold due to system selection" --enable-linker=mold
+			else
+				mozconfig_add_options_ac "forcing ld=lld due to USE=clang and USE=lto" --enable-linker=lld
+			fi
 
 			mozconfig_add_options_ac '+lto' --enable-lto=cross
 
 		else
-			# ThinLTO is currently broken, see bmo#1644409
+			# ThinLTO is currently broken, see bmo#1644409.
+			# mold does not support gcc+lto combination.
 			mozconfig_add_options_ac '+lto' --enable-lto=full
 			mozconfig_add_options_ac "linker is set to bfd" --enable-linker=bfd
 		fi
@@ -772,20 +950,32 @@ src_configure() {
 	else
 		# Avoid auto-magic on linker
 		if use clang ; then
-			# This is upstream's default
-			mozconfig_add_options_ac "forcing ld=lld due to USE=clang" --enable-linker=lld
+			# lld is upstream's default
+			if tc-ld-is-mold ; then
+				mozconfig_add_options_ac "using ld=mold due to system selection" --enable-linker=mold
+			else
+				mozconfig_add_options_ac "forcing ld=lld due to USE=clang" --enable-linker=lld
+			fi
+
 		else
-			mozconfig_add_options_ac "linker is set to bfd" --enable-linker=bfd
+			if tc-ld-is-mold ; then
+				mozconfig_add_options_ac "using ld=mold due to system selection" --enable-linker=mold
+			else
+				mozconfig_add_options_ac "linker is set to bfd due to USE=-clang" --enable-linker=bfd
+			fi
 		fi
 	fi
 
 	# LTO flag was handled via configure
-	filter-flags '-flto*'
+	filter-lto
 
 	mozconfig_use_enable debug
 	if use debug ; then
 		mozconfig_add_options_ac '+debug' --disable-optimize
+		mozconfig_add_options_ac '+debug' --enable-real-time-tracing
 	else
+		mozconfig_add_options_ac 'Gentoo defaults' --disable-real-time-tracing
+
 		if is-flag '-g*' ; then
 			if use clang ; then
 				mozconfig_add_options_ac 'from CFLAGS' --enable-debug-symbols=$(get-flag '-g*')
@@ -865,6 +1055,10 @@ src_configure() {
 		:
 	fi
 
+	if use elibc_musl && use arm64 ; then
+		mozconfig_add_options_ac 'elf-hack is broken when using musl/arm64' --disable-elf-hack
+	fi
+
 	# Additional ARCH support
 	case "${ARCH}" in
 		arm)
@@ -880,7 +1074,7 @@ src_configure() {
 			;;
 	esac
 
-	if ! use elibc_glibc ; then
+	if ! use elibc_glibc; then
 		mozconfig_add_options_ac '!elibc_glibc' --disable-jemalloc
 	fi
 
@@ -895,7 +1089,7 @@ src_configure() {
 	export MOZ_MAKE_FLAGS="${MAKEOPTS}"
 
 	# Use system's Python environment
-	PIP_NETWORK_INSTALL_RESTRICTED_VIRTUALENVS=mach
+	export PIP_NETWORK_INSTALL_RESTRICTED_VIRTUALENVS=mach
 
 	if use system-python-libs; then
 		export MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE="system"
@@ -948,19 +1142,36 @@ src_configure() {
 src_compile() {
 	local virtx_cmd=
 
-	if use pgo ; then
-		virtx_cmd=virtx
+	if tc-ld-is-mold && use lto; then
+		# increase ulimit with mold+lto, bugs #892641, #907485
+		if ! ulimit -n 16384 1>/dev/null 2>&1 ; then
+			ewarn "Unable to modify ulimits - building with mold+lto might fail due to low ulimit -n resources."
+			ewarn "Please see bugs #892641 & #907485."
+		else
+			ulimit -n 16384
+		fi
+	fi
 
+	if use pgo; then
 		# Reset and cleanup environment variables used by GNOME/XDG
 		gnome2_environment_reset
 
 		addpredict /root
+
+		if ! use X; then
+			virtx_cmd=virtwl
+		else
+			virtx_cmd=virtx
+		fi
 	fi
 
-	local -x GDK_BACKEND=x11
+	if ! use X; then
+		local -x GDK_BACKEND=wayland
+	else
+		local -x GDK_BACKEND=x11
+	fi
 
-	${virtx_cmd} ./mach build --verbose \
-		|| die
+	${virtx_cmd} ./mach build --verbose || die
 }
 
 src_install() {
@@ -984,6 +1195,7 @@ src_install() {
 	# Install policy (currently only used to disable application updates)
 	insinto "${MOZILLA_FIVE_HOME}/distribution"
 	newins "${FILESDIR}"/distribution.ini distribution.ini
+
 
 	# more tweaks
 	if use custom-fixes; then
@@ -1013,6 +1225,9 @@ src_install() {
 		newins "${T}/${name}" "${name}"
 		insinto "${MOZILLA_FIVE_HOME}/defaults/pref"
 		newins "${T}/autoconfig.js" autoconfig.js
+	else
+		# use default Gentoo policy
+		newins "${FILESDIR}"/disable-auto-update.policy.json policies.json
 	fi
 
 	# Install system-wide preferences
@@ -1051,11 +1266,11 @@ src_install() {
 		EOF
 	fi
 
-	# Install language packs
-	local langpacks=( $(find "${WORKDIR}/language_packs" -type f -name '*.xpi') )
-	if [[ -n "${langpacks}" ]] ; then
-		moz_install_xpi "${MOZILLA_FIVE_HOME}/distribution/extensions" "${langpacks[@]}"
-	fi
+	# Install language packs (built-in)
+	#local langpacks=( $(find "${WORKDIR}/language_packs" -type f -name '*.xpi') )
+	#if [[ -n "${langpacks}" ]] ; then
+	#	moz_install_xpi "${MOZILLA_FIVE_HOME}/distribution/extensions" "${langpacks[@]}"
+	#fi
 
 	# Install geckodriver
 	if use geckodriver ; then
@@ -1069,7 +1284,7 @@ src_install() {
 
 	# Install icons
 	local icon_srcdir="${S}/browser/branding/official"
-	local icon_symbolic_file="${FILESDIR}/icon/icecat-symbolic.svg"
+	local icon_symbolic_file="${FILESDIR}/icon/${PN}-symbolic.svg"
 
 	insinto /usr/share/icons/hicolor/symbolic/apps
 	newins "${icon_symbolic_file}" ${PN}-symbolic.svg
@@ -1093,7 +1308,6 @@ src_install() {
 	local exec_command="${PN}"
 	local icon="${PN}"
 	local use_wayland="false"
-
 
 	if use wayland ; then
 		use_wayland="true"
@@ -1156,44 +1370,27 @@ pkg_postinst() {
 		elog
 	fi
 
-	local show_shortcut_information
-
-	if [[ -z "${REPLACING_VERSIONS}" ]] ; then
-		# New install; Tell user that DoH is disabled by default
-		show_shortcut_information=no
-	else
-		local replacing_version
-		for replacing_version in ${REPLACING_VERSIONS} ; do
-			if ver_test "${replacing_version}" -lt 91.0 ; then
-				# Tell user that we no longer install a shortcut
-				# per supported display protocol
-				show_shortcut_information=yes
-			fi
-		done
-	fi
-
-	if [[ -n "${show_shortcut_information}" ]] ; then
-		elog
-		elog "Since ${PN}-91.0 we no longer install multiple shortcuts for"
-		elog "each supported display protocol.  Instead we will only install"
-		elog "one generic Mozilla ${PN^} shortcut."
-		elog "If you still want to be able to select between running Mozilla ${PN^}"
-		elog "on X11 or Wayland, you have to re-create these shortcuts on your own."
-	fi
-
 	# bug 835078
 	if use hwaccel && has_version "x11-drivers/xf86-video-nouveau"; then
 		ewarn "You have nouveau drivers installed in your system and 'hwaccel' "
-		ewarn "enabled for Firefox. Nouveau / your GPU might not support the "
+		ewarn "enabled for IceCat. Nouveau / your GPU might not support the "
 		ewarn "required EGL, so either disable 'hwaccel' or try the workaround "
-		ewarn "explained in https://bugs.gentoo.org/835078#c5 if Firefox crashes."
+		ewarn "explained in https://bugs.gentoo.org/835078#c5 if IceCat crashes."
 	fi
 
 	elog
-	elog "Unfortunately Firefox-100.0 breaks compatibility with some sites using "
+	elog "Unfortunately IceCat-100.0 breaks compatibility with some sites using "
 	elog "useragent checks. To temporarily fix this, enter about:config and modify "
 	elog "network.http.useragent.forceVersion preference to \"99\"."
 	elog "Or install an addon to change your useragent."
 	elog "See: https://support.mozilla.org/en-US/kb/difficulties-opening-or-using-website-firefox-100"
 	elog
+
+	optfeature_header "Optional programs for extra features:"
+	optfeature "desktop notifications" x11-libs/libnotify
+	optfeature "fallback mouse cursor theme e.g. on WMs" gnome-base/gsettings-desktop-schemas
+
+	if use hwaccel && has_version "x11-drivers/nvidia-drivers"; then
+		optfeature "hardware acceleration with NVIDIA cards" media-libs/nvidia-vaapi-driver
+	fi
 }

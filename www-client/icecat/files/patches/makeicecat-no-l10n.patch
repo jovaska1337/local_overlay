@@ -1,14 +1,6 @@
 --- a/makeicecat
 +++ b/makeicecat
-@@ -220,6 +220,7 @@
- 
- fetch_l10n()
- {
-+    return
-     cd l10n
- 
-     while read lang; do
-@@ -274,6 +274,7 @@
+@@ -339,6 +339,7 @@
      done
  
      for dir in l10n/*; do
@@ -16,7 +8,7 @@
          if [[ $dir != l10n/compare-locales ]]; then
              if [[ ! -e ${DATADIR}/files-to-append/${dir}/${PREFS_OUT_FILE} ]]; then
                  cat ${DATADIR}/files-to-append/${PREFS_IN_FILE} >> ${dir}/${PREFS_OUT_FILE}
-@@ -431,7 +431,7 @@
+@@ -506,7 +508,7 @@
      cp "${DATADIR}"/newtab/*.png browser/components/newtab/data/content/tippytop/images/
  
      # IceCat menu l10n
@@ -24,8 +16,17 @@
 +    /bin/sed '/appmenuitem-settings/,+1s/\(.*.label = \)\(.*\)/\1\2\nappmenuitem-icecat-settings =\n\1IceCat \2/' -i  ./browser/locales/en-US/browser/appmenu.ftl
  
      # Disable remote settings server
-     sed '/REMOTE_SETTINGS_SERVER_URL/,/^$/s/http.*"/"/' -i toolkit/modules/AppConstants.jsm
-@@ -605,7 +605,7 @@
+     sed '/REMOTE_SETTINGS_SERVER_URL/,/^$/s/http.*"/"/' -i toolkit/modules/AppConstants.sys.mjs
+@@ -602,7 +604,7 @@
+     remove_if_block_in_file "#ifndef NIGHTLY_BUILD" browser/base/content/default-bookmarks.html
+ 
+     # Custom legal about pages
+-    find l10n -wholename '*/brand.ftl' | xargs /bin/sed 's/^trademarkInfo = .*/trademarkInfo = The IceCat logo is Copyright 2008-2015 Free Software Foundation, released under the terms of the GNU Lesser General Public License, version 3 or any later version./' -i
++    #find l10n -wholename '*/brand.ftl' | xargs /bin/sed 's/^trademarkInfo = .*/trademarkInfo = The IceCat logo is Copyright 2008-2015 Free Software Foundation, released under the terms of the GNU Lesser General Public License, version 3 or any later version./' -i
+     local string
+     for string in rights-intro-point-2 rights-intro-point-3 rights-intro-point-4 rights-intro-point-5 rights-intro-point-6 rights-webservices rights-safebrowsing
+     do
+@@ -687,7 +689,7 @@
  "
      find . -type f -not -iregex '.*changelog.*' -not -iregex '.*copyright.*' -not -iregex '.*third_party/rust.*' -execdir /bin/sed --follow-symlinks -i "${sed_script}" '{}' ';'
  

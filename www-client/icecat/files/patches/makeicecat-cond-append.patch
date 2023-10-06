@@ -1,0 +1,10 @@
+--- a/makeicecat
++++ b/makeicecat
+@@ -344,6 +344,7 @@
+     shopt -u nullglob
+ 
+     for file_to_append in $(cd "${DATADIR}"/files-to-append; find . -type f -print); do
++	[[ ! -d "$(dirname "$file_to_append")" ]] && continue
+         echo Appending new data to the end of file: $file_to_append
+         cat "${DATADIR}"/files-to-append/$file_to_append >> $file_to_append
+     done
