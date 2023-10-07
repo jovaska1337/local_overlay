@@ -660,9 +660,7 @@ src_prepare() {
 	_makeicecat
 
 	# switch source to generated icecat sources
-	rm "$S"
-	ln -s "${WORKDIR}/firefox-${PV}" "$S"
-	cd "$S"
+	rm "$S" && ln -s "${WORKDIR}/firefox-${PV}" "$S" && cd "$S" || die
 
 	if use lto; then
 		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
