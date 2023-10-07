@@ -25,7 +25,7 @@ VIRTUALX_REQUIRED="manual"
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info \
 	llvm multiprocessing optfeature pax-utils python-any-r1 toolchain-funcs \
-	virtualx xdg l10n
+	virtualx xdg
 
 PATCH_URIS=(
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
