@@ -9,10 +9,10 @@ EAPI=8
 # this commit should have version numbers that match this ebuild
 # as the firefox source fetching is integrated here as well to
 # utilize the portage distfiles cache
-COMMIT="1b0f0ba84716023657dd7dff72cb408e35380a60"
+COMMIT="5b2ce0c4cefc73f996f260edfac368ecc3d86b24"
 
 # this comes from firefox-${PV}.ebuild
-FIREFOX_PATCHSET="firefox-115esr-patches-06.tar.xz"
+FIREFOX_PATCHSET="firefox-115esr-patches-07.tar.xz"
 
 LLVM_MAX_SLOT=16
 
@@ -54,7 +54,6 @@ IUSE+=" wayland wifi +X"
 
 # Firefox-only IUSE
 IUSE+=" geckodriver screencast"
-IUSE+=" +buildtarball"
 IUSE+=" unity-menubar custom-fixes userchrome-js kde"
 
 REQUIRED_USE="|| ( X wayland )
@@ -304,6 +303,7 @@ mozilla_set_globals() {
 		fi
 
 		# makeicecat uses these to select included locales
+		# l10n is broken ATM, needs fixing :)
 		IUSE+=" l10n_${xflag/[_@]/-}"
 	done
 }
@@ -623,7 +623,7 @@ _makeicecat() {
 
 	# add selected locales to build
 	echo -n > "${WORKDIR}/firefox-${PV}/browser/locales/shipped-locales" || die
-	local flag
+	local flag has_l10n=0
 	for flag in $IUSE; do
 		# strip possible +
 		flag="${flag##+}"
@@ -640,13 +640,15 @@ _makeicecat() {
 		# add locale
 		einfo "Adding locale ${flag}"
 		echo "$flag" >> "${WORKDIR}/firefox-${PV}/browser/locales/shipped-locales"
+
+		has_l10n=1
 	done
 
 	# append files conditionally (ie. if target langpack exists)
 	eapply "${FILESDIR}/patches/makeicecat-cond-append.patch"
 
 	# no locales, need to patch
-	if [[ ! "$flag" ]]; then
+	if [[ "$has_l10n" != 1 ]]; then
 		eapply "${FILESDIR}/patches/makeicecat-no-l10n.patch"
 	fi
 
@@ -701,13 +703,14 @@ src_prepare() {
 		eapply "${FILESDIR}/patches/disable-extensions.patch"
 
 		# OpenSUSE gconf proxy fix
-		eapply "${FILESDIR}/patches/$(ver_cut 1)-gconf-proxy.patch"
+		#eapply "${FILESDIR}/patches/$(ver_cut 1)-gconf-proxy.patch"
 	fi
 
 	# KDE integration from OpenSUSE
 	if use kde; then
-		eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-toolkit.patch"
-		eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-browser.patch"
+		ewarn "KDE patches are disabled for now."
+		#eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-toolkit.patch"
+		#eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-browser.patch"
 	fi
 
 	# Allow user to apply any additional patches without modifing ebuild
@@ -1194,7 +1197,6 @@ src_install() {
 	insinto "${MOZILLA_FIVE_HOME}/distribution"
 	newins "${FILESDIR}"/distribution.ini distribution.ini
 
-
 	# more tweaks
 	if use custom-fixes; then
 		# install enterprise policy
@@ -1264,7 +1266,7 @@ src_install() {
 		EOF
 	fi
 
-	# Install language packs (built-in)
+	# Install language packs
 	#local langpacks=( $(find "${WORKDIR}/language_packs" -type f -name '*.xpi') )
 	#if [[ -n "${langpacks}" ]] ; then
 	#	moz_install_xpi "${MOZILLA_FIVE_HOME}/distribution/extensions" "${langpacks[@]}"
