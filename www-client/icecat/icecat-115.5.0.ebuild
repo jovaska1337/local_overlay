@@ -9,10 +9,10 @@ EAPI=8
 # this commit should have version numbers that match this ebuild
 # as the firefox source fetching is integrated here as well to
 # utilize the portage distfiles cache
-COMMIT="5b2ce0c4cefc73f996f260edfac368ecc3d86b24"
+COMMIT="bd66797f3bb057c9d051d4276d63843b4d7ee854"
 
 # this comes from firefox-${PV}.ebuild
-FIREFOX_PATCHSET="firefox-115esr-patches-07.tar.xz"
+FIREFOX_PATCHSET="firefox-115esr-patches-08.tar.xz"
 
 LLVM_MAX_SLOT=16
 
@@ -667,6 +667,10 @@ src_prepare() {
 	if use lto; then
 		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
 	fi
+
+	# this patch seems to be broken (causes assertion failure during compilation)
+	# you might want to emerge with USE=-system-icu until this is fixed by someone else :P
+	rm "${WORKDIR}/firefox-patches/"*-system-icu-*
 
 	eapply "${WORKDIR}/firefox-patches"
 
