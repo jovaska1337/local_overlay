@@ -9,12 +9,12 @@ EAPI=8
 # this commit should have version numbers that match this ebuild
 # as the firefox source fetching is integrated here as well to
 # utilize the portage distfiles cache
-COMMIT="6a76a10682b6e63f562e4b9f26f3ef12f88bd839"
+COMMIT="7e2ff1ad7e03d2bfe0b2daf3f25961b06cab8848"
 
 # this comes from firefox-${PV}.ebuild
 FIREFOX_PATCHSET="firefox-115esr-patches-08.tar.xz"
 
-LLVM_MAX_SLOT=16
+LLVM_MAX_SLOT=17
 
 PYTHON_COMPAT=( python3_{10..11} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
@@ -72,6 +72,15 @@ FF_ONLY_DEPEND="!www-client/icecat:0
 
 BDEPEND="${PYTHON_DEPS}
 	|| (
+		(
+			sys-devel/clang:17
+			sys-devel/llvm:17
+			clang? (
+				sys-devel/lld:17
+				virtual/rust:0/llvm-17
+				pgo? ( =sys-libs/compiler-rt-sanitizers-17*[profile] )
+			)
+		)
 		(
 			sys-devel/clang:16
 			sys-devel/llvm:16
@@ -712,9 +721,8 @@ src_prepare() {
 
 	# KDE integration from OpenSUSE
 	if use kde; then
-		ewarn "KDE patches are disabled for now."
-		#eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-toolkit.patch"
-		#eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-browser.patch"
+		eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-toolkit.patch"
+		eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-browser.patch"
 	fi
 
 	# Allow user to apply any additional patches without modifing ebuild
