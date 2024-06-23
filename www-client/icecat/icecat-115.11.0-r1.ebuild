@@ -9,10 +9,10 @@ EAPI=8
 # this commit should have version numbers that match this ebuild
 # as the firefox source fetching is integrated here as well to
 # utilize the portage distfiles cache
-COMMIT="7e2ff1ad7e03d2bfe0b2daf3f25961b06cab8848"
+COMMIT="5107c173217a594c52c6c301be62a4dc603b3f6f"
 
 # this comes from firefox-${PV}.ebuild
-FIREFOX_PATCHSET="firefox-115esr-patches-08.tar.xz"
+FIREFOX_PATCHSET="firefox-115esr-patches-09.tar.xz"
 
 LLVM_MAX_SLOT=17
 
@@ -33,8 +33,8 @@ PATCH_URIS=(
 
 # download firefox source using portage (makeicecat needs to be patched for this)
 SRC_URI="
-	https://archive.mozilla.org/pub/firefox/releases/${PV}esr/source/firefox-${PV}esr.source.tar.xz -> firefox-${PV}esr.source.tar.xz
-	https://git.savannah.gnu.org/cgit/gnuzilla.git/snapshot/gnuzilla-${COMMIT}.tar.gz -> makeicecat-${PV}.tar.gz
+	https://archive.mozilla.org/pub/firefox/candidates/${PV}esr-candidates/build${PR:1}/source/firefox-${PV}esr.source.tar.xz -> firefox-${PV}-${PR:1}esr.source.tar.xz
+	https://git.savannah.gnu.org/cgit/gnuzilla.git/snapshot/gnuzilla-${COMMIT}.tar.gz -> makeicecat-${PVR}.tar.gz
 	${PATCH_URIS[@]}
 "
 
@@ -677,9 +677,20 @@ src_prepare() {
 		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
 	fi
 
-	# this patch seems to be broken (causes assertion failure during compilation)
-	# you might want to emerge with USE=-system-icu until this is fixed by someone else :P
-	rm "${WORKDIR}/firefox-patches/"*-system-icu-*
+	if use x86 && use elibc_glibc ; then
+		rm -v "${WORKDIR}"/firefox-patches/*-musl-non-lfs64-api-on-audio_thread_priority-crate.patch || die
+	fi
+
+	# Workaround for bgo#917599
+	if has_version ">=dev-libs/icu-74.1" && use system-icu ; then
+		eapply "${WORKDIR}"/firefox-patches/0029-bmo-1862601-system-icu-74.patch
+	fi
+	rm -v "${WORKDIR}"/firefox-patches/0029-bmo-1862601-system-icu-74.patch || die
+
+	# Workaround for bgo#915651 on musl
+	if use elibc_glibc ; then
+		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
+	fi
 
 	eapply "${WORKDIR}/firefox-patches"
 
