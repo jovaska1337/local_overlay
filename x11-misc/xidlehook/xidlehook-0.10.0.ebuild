@@ -1,6 +1,6 @@
 # no license, fuck you
 
-EAPI=7
+EAPI=8
 
 CRATES="
 aho-corasick-0.7.15

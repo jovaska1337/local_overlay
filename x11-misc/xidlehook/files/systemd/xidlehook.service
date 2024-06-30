@@ -3,7 +3,7 @@ Description=xidlehook daemon
 After=display-manager.service
 
 [Service]
-ExecStart=/usr/local/libexec/xidlehook
+ExecStart=/usr/libexec/xidlehook
 ExecStopPost=xset s default +dpms
 Slice=session.slice
 Restart=on-failure

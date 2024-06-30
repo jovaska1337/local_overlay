@@ -8,6 +8,7 @@ ECM_TEST="forceoptional"
 KFMIN=5.106.0
 PVCUT=$(ver_cut 1-3)
 QTMIN=5.15.9
+
 inherit ecm kde.org
 
 EGIT_BRANCH="master"

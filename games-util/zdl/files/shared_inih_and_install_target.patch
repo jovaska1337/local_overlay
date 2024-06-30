@@ -28,8 +28,8 @@
  
  target_include_directories(zdl PRIVATE ${PROJECT_SOURCE_DIR}/zdlconf)
 -target_include_directories(zdl PRIVATE ${inih_SOURCE_DIR})
--target_link_libraries(zdl Qt5::Core Qt5::Widgets)
-+target_link_libraries(zdl Qt5::Core Qt5::Widgets ${INIH_LIBRARIES})
+-target_link_libraries(zdl Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Widgets)
++target_link_libraries(zdl Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Widgets ${INIH_LIBRARIES})
 +
 +install(PROGRAMS ${CMAKE_BINARY_DIR}/zdl TYPE BIN)
 +

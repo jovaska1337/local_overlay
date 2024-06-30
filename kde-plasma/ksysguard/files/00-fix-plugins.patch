@@ -1,0 +1,110 @@
+From 28e625c0bbd5ebad5fe13b7414a8f43c73ac4c4e Mon Sep 17 00:00:00 2001
+From: jas0n098 <jason098@protonmail.ch>
+Date: Fri, 14 Jun 2024 16:48:02 +0200
+Subject: [PATCH 1/2] Make plugins match the new version number
+
+---
+ processcore/extended_process_list.cpp             | 2 +-
+ processcore/plugins/network/CMakeLists.txt        | 2 +-
+ processcore/plugins/network/helper/CMakeLists.txt | 4 ++--
+ processcore/plugins/network/networkconstants.h.in | 2 +-
+ processcore/plugins/nvidia/CMakeLists.txt         | 2 +-
+ 5 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/processcore/extended_process_list.cpp b/processcore/extended_process_list.cpp
+index 3d0bbf68..41008f73 100644
+--- a/processcore/extended_process_list.cpp
++++ b/processcore/extended_process_list.cpp
+@@ -546,7 +546,7 @@ QList<ProcessAttribute *> ExtendedProcesses::extendedAttributes() const
+ 
+ void ExtendedProcesses::Private::loadPlugins()
+ {
+-    const QList<KPluginMetaData> listMetaData = KPluginMetaData::findPlugins(QStringLiteral("ksysguard5/process"));
++    const QList<KPluginMetaData> listMetaData = KPluginMetaData::findPlugins(QStringLiteral("ksysguard6/process"));
+     // instantiate all plugins
+     for (const auto &pluginMetaData : listMetaData) {
+         qCDebug(LIBKSYSGUARD_PROCESSCORE) << "loading plugin" << pluginMetaData.name();
+diff --git a/processcore/plugins/network/CMakeLists.txt b/processcore/plugins/network/CMakeLists.txt
+index dfa2b3f0..bdfd2610 100644
+--- a/processcore/plugins/network/CMakeLists.txt
++++ b/processcore/plugins/network/CMakeLists.txt
+@@ -18,4 +18,4 @@ configure_file(networkconstants.h.in networkconstants.h @ONLY)
+ add_library(ksysguard_plugin_network MODULE ${networkplugin_SRCS})
+ target_link_libraries(ksysguard_plugin_network Qt::Core Qt::DBus KF6::CoreAddons KF6::I18n ProcessCore)
+ 
+-install(TARGETS ksysguard_plugin_network DESTINATION ${KDE_INSTALL_PLUGINDIR}/ksysguard5/process)
++install(TARGETS ksysguard_plugin_network DESTINATION ${KDE_INSTALL_PLUGINDIR}/ksysguard6/process)
+diff --git a/processcore/plugins/network/helper/CMakeLists.txt b/processcore/plugins/network/helper/CMakeLists.txt
+index d4e0088a..e24885d0 100644
+--- a/processcore/plugins/network/helper/CMakeLists.txt
++++ b/processcore/plugins/network/helper/CMakeLists.txt
+@@ -16,13 +16,13 @@ set_target_properties(ksgrd_network_helper PROPERTIES CXX_STANDARD 17 CXX_STANDA
+ # Why can't CMake fix this itself?'
+ target_link_libraries(ksgrd_network_helper pthread)
+ 
+-install(TARGETS ksgrd_network_helper DESTINATION ${KDE_INSTALL_LIBEXECDIR}/ksysguard5)
++install(TARGETS ksgrd_network_helper DESTINATION ${KDE_INSTALL_LIBEXECDIR}/ksysguard6)
+ 
+ if (Libcap_FOUND)
+     install(
+         CODE "execute_process(
+         COMMAND ${SETCAP_EXECUTABLE}
+         CAP_NET_RAW=+ep
+-        \$ENV{DESTDIR}${KDE_INSTALL_FULL_LIBEXECDIR}/ksysguard5/ksgrd_network_helper)"
++        \$ENV{DESTDIR}${KDE_INSTALL_FULL_LIBEXECDIR}/ksysguard6/ksgrd_network_helper)"
+     )
+ endif()
+diff --git a/processcore/plugins/network/networkconstants.h.in b/processcore/plugins/network/networkconstants.h.in
+index 3b94e5bb..b3973ed6 100644
+--- a/processcore/plugins/network/networkconstants.h.in
++++ b/processcore/plugins/network/networkconstants.h.in
+@@ -2,6 +2,6 @@
+ 
+ namespace NetworkConstants {
+ 
+-static const QString HelperLocation = QStringLiteral("@KDE_INSTALL_FULL_LIBEXECDIR@/ksysguard5/ksgrd_network_helper");
++static const QString HelperLocation = QStringLiteral("@KDE_INSTALL_FULL_LIBEXECDIR@/ksysguard6/ksgrd_network_helper");
+ 
+ }
+diff --git a/processcore/plugins/nvidia/CMakeLists.txt b/processcore/plugins/nvidia/CMakeLists.txt
+index 37c9c5d7..15675c23 100644
+--- a/processcore/plugins/nvidia/CMakeLists.txt
++++ b/processcore/plugins/nvidia/CMakeLists.txt
+@@ -1,3 +1,3 @@
+ add_library(ksysguard_plugin_nvidia MODULE nvidia.cpp nvidia.h)
+ target_link_libraries(ksysguard_plugin_nvidia Qt::Core ProcessCore KF6::I18n KF6::CoreAddons)
+-install(TARGETS ksysguard_plugin_nvidia DESTINATION ${KDE_INSTALL_PLUGINDIR}/ksysguard5/process)
++install(TARGETS ksysguard_plugin_nvidia DESTINATION ${KDE_INSTALL_PLUGINDIR}/ksysguard6/process)
+
+From 92cac89ec5d070f7aa6d95588b60eff42c078878 Mon Sep 17 00:00:00 2001
+From: jas0n098 <jason098@protonmail.ch>
+Date: Fri, 14 Jun 2024 16:49:30 +0200
+Subject: [PATCH 2/2] Change processcore back to shared and re-enable plugins
+
+---
+ processcore/CMakeLists.txt | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/processcore/CMakeLists.txt b/processcore/CMakeLists.txt
+index 17e1ff71..37cf172c 100644
+--- a/processcore/CMakeLists.txt
++++ b/processcore/CMakeLists.txt
+@@ -23,7 +23,7 @@ set(ksysguard_LIB_SRCS
+ ecm_qt_declare_logging_category(ksysguard_LIB_SRCS HEADER processcore_debug.h IDENTIFIER LIBKSYSGUARD_PROCESSCORE CATEGORY_NAME org.kde.libksysguard.processcore
+     DESCRIPTION "libksysguard (processcore)" EXPORT LIBKSYSGUARD)
+ 
+-add_library(processcore STATIC ${ksysguard_LIB_SRCS})
++add_library(processcore SHARED ${ksysguard_LIB_SRCS})
+ add_library(ProcessCore ALIAS processcore)
+ 
+ generate_export_header(processcore)
+@@ -62,8 +62,7 @@ target_include_directories(processcore
+ #install(TARGETS processcore EXPORT libksysguardLibraryTargets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+ 
+ #add_subdirectory(declarative)
+-# Unfortunately, it doesn't work yet.
+-#add_subdirectory(plugins)
++add_subdirectory(plugins)
+ 
+ ########### install files ###############
+ 

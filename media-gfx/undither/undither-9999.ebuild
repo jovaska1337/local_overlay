@@ -9,20 +9,29 @@ cfg-if-1.0.0
 crc32fast-1.3.2
 either-1.8.1
 flate2-1.0.26
-imgref-1.7.1
-itertools-0.10.0
+imgref-1.9.4
+itertools-0.11.0
 libc-0.2.144
-lodepng-3.2.2
+lodepng-3.7.2
 loop9-0.1.3
 miniz_oxide-0.7.1
 num-traits-0.2.15
-rgb-0.8.25
+rgb-0.8.36
 vpsearch-2.0.1
+fallible_collections-0.4.9
+hashbrown-0.13.0
+ahash-0.8.3
+version_check-0.9.4
+once_cell-1.18.0
 "
 
 inherit cargo git-r3
 
 SRC_URI="$(cargo_crate_uris ${CRATES})"
+
+# I'm not updating the crate list manually each time the developer decides
+# to version bump dependencies, so this is it until some features are added
+EGIT_COMMIT="0b1cb237949ed868ddbe8a3a77bbbee578b3a198"
 EGIT_REPO_URI="https://github.com/kornelski/undither"
 
 DESCRIPTION="Smart filter to remove Floyd-Steinberg dithering from paletted images."

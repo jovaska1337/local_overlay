@@ -9,37 +9,36 @@
 
 # run xrandr command for all active outputs
 xrandr_cmd() {
-	echo "for out in \$(xrandr | awk '/ connected/{print \$1}');" \
-		"do xrandr --output \"\$out\" $@; done"
+	echo "while read out; do xrandr --output \"\$out\" $@;" \
+		"done < <(xrandr | grep -Po '^.+(?= connected)')"
 }
 
 # generate a dbus-send method call command
+# $0 = <0|1>  | use system bus
+# $1 = object | dbus object
+# $2 = method | method to call
+# $@ = [args] | call arguments
 dbus_cmd() {
-	local system=0
-	local object
-	local method
+	# extract required parameters
+	system="$1"
+	object="$2"
+	method="$3"
+	shift 3
 
-	local option
-	while getopts "o:m:s" option; do
-		case "$opt" in
-			'o') object="$OPTARG";;
-			'm') method="$OPTARG";;
-			's') system=1;;
-		esac
-	done
-	shift $(($OPTIND - 1))
+	# system must be 0 or 1
+	[[ "$system" != 0 && "$system" != 1 ]] && return 1
 
-	# object and method are required
+	# object and method must exist
 	[[ ! "$object" || ! "$method" ]] && return 1
 
 	# --print-reply is necessary or the method won't be run (bug?)
 	echo "dbus-send $([[ "$system" -eq 1 ]] && echo '--system ')" \
 		"--print-reply" \
-		"--dest=\"${object}\" \"/\"${object//./\/}\"" \
+		"--dest=\"${object}\" \"/${object//./\/}\"" \
 		"\"${object}.${method}\" $@ &>/dev/null"
 }
 
-# disable the default X11 behavior
+# disable the default X11 behavior (re-enabled by systemd unit)
 xset s noblank s noexpose -dpms
 
 # run xidlehook
@@ -51,11 +50,11 @@ exec xidlehook \
 		"$(xrandr_cmd --brightness .5)" \
 		"$(xrandr_cmd --brightness 1)" \
 	--timer "$TIMEOUT_LOCK" \
-		"$(xrandr_cmd --brightness .1);$(dbus_cmd -oorg.freedesktop.ScreenSaver -mLock)" \
+		"$(xrandr_cmd --brightness .1);$(dbus_cmd 0 org.freedesktop.ScreenSaver Lock)" \
 		"$(xrandr_cmd --brightness 1)" \
 	--timer "$TIMEOUT_DPMS" \
 		"xset dpms force standby" \
 		"$(xrandr_cmd --brightness 1)" \
 	--timer "$TIMEOUT_SUSP" \
-		"$(dbus_cmd -s -oorg.freedesktop.login1 -mManager.Suspend boolean:true)" \
+		"$(dbus_cmd 1 org.freedesktop.login1 Manager.Suspend boolean:true)" \
 		"$(xrandr_cmd --brightness 1); xset s noblank s noexpose -dpms"

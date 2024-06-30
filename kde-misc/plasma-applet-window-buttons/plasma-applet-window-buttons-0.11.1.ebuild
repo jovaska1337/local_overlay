@@ -20,7 +20,7 @@ RESTRICT="mirror"
 
 # (these may be incomplete)
 DEPEND="
-	>=kde-frameworks/plasma-5.23.2:5
+	>=kde-plasma/libplasma-5.38
 	>=kde-frameworks/kdeclarative-5.38
 	>=kde-frameworks/kcoreaddons-5.38
 	>=kde-plasma/kdecoration-5.23:5
@@ -33,7 +33,7 @@ PATCHES=( "${FILESDIR}/window-class.patch" )
 
 src_unpack()
 {
-	default_src_unpack
+	[[ "${PV}" == 9999 ]] && git-r3_src_unpack || default_src_unpack
 
 	# fix directory name
 	mv "${WORKDIR}/applet-window-buttons-${PV}" "${WORKDIR}/${P}"

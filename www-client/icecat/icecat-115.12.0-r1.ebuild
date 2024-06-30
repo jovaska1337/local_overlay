@@ -9,7 +9,7 @@ EAPI=8
 # this commit should have version numbers that match this ebuild
 # as the firefox source fetching is integrated here as well to
 # utilize the portage distfiles cache
-COMMIT="5107c173217a594c52c6c301be62a4dc603b3f6f"
+COMMIT="f200ffe88821f66234591096bcbe87b0c11f8da0"
 
 # this comes from firefox-${PV}.ebuild
 FIREFOX_PATCHSET="firefox-115esr-patches-09.tar.xz"
