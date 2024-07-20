@@ -9,14 +9,14 @@ EAPI=8
 # this commit should have version numbers that match this ebuild
 # as the firefox source fetching is integrated here as well to
 # utilize the portage distfiles cache
-COMMIT="f200ffe88821f66234591096bcbe87b0c11f8da0"
+COMMIT="445980b18666c8214e5c62db3ae7108d5694242f"
 
 # this comes from firefox-${PV}.ebuild
-FIREFOX_PATCHSET="firefox-115esr-patches-09.tar.xz"
+FIREFOX_PATCHSET="firefox-115esr-patches-11.tar.xz"
 
-LLVM_MAX_SLOT=17
+LLVM_MAX_SLOT=18
 
-PYTHON_COMPAT=( python3_{10..11} )
+PYTHON_COMPAT=( python3_{10..12} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 WANT_AUTOCONF="2.1"
