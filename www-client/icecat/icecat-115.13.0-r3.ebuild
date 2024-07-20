@@ -12,7 +12,7 @@ EAPI=8
 COMMIT="445980b18666c8214e5c62db3ae7108d5694242f"
 
 # this comes from firefox-${PV}.ebuild
-FIREFOX_PATCHSET="firefox-115esr-patches-11.tar.xz"
+FIREFOX_PATCHSET="firefox-115esr-patches-10.tar.xz"
 
 LLVM_MAX_SLOT=18
 
