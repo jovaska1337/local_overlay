@@ -93,7 +93,6 @@
 			"Default": true,
 			"Locked": false
 		},
-		"PromptForDownloadLocation": true,
 		"SanitizeOnShutdown": {
 			"Cache": true,
 			"Cookies": false,

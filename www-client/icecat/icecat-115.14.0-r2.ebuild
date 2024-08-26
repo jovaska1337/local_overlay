@@ -1,31 +1,30 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 # makceiceat is integrated into this ebuild in src_prepare()
-# based on firefox-115.2.1.ebuild
+# based on firefox-115.14.0.ebuild
 
 EAPI=8
 
 # this commit should have version numbers that match this ebuild
 # as the firefox source fetching is integrated here as well to
 # utilize the portage distfiles cache
-COMMIT="445980b18666c8214e5c62db3ae7108d5694242f"
+COMMIT="4bd4d4948f2db495872ee11a8a7b0dd30549656c"
 
 # this comes from firefox-${PV}.ebuild
-FIREFOX_PATCHSET="firefox-115esr-patches-10.tar.xz"
+FIREFOX_PATCHSET="firefox-115esr-patches-13.tar.xz"
 
 LLVM_MAX_SLOT=18
 
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{10..11} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 WANT_AUTOCONF="2.1"
 
 VIRTUALX_REQUIRED="manual"
 
-inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info \
-	llvm multiprocessing optfeature pax-utils python-any-r1 toolchain-funcs \
-	virtualx xdg
+inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm multiprocessing \
+	optfeature pax-utils python-any-r1 readme.gentoo-r1 toolchain-funcs virtualx xdg
 
 PATCH_URIS=(
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
@@ -73,6 +72,15 @@ FF_ONLY_DEPEND="!www-client/icecat:0
 BDEPEND="${PYTHON_DEPS}
 	|| (
 		(
+			sys-devel/clang:18
+			sys-devel/llvm:18
+			clang? (
+				sys-devel/lld:18
+				virtual/rust:0/llvm-18
+				pgo? ( =sys-libs/compiler-rt-sanitizers-18*[profile] )
+			)
+		)
+		(
 			sys-devel/clang:17
 			sys-devel/llvm:17
 			clang? (
@@ -106,7 +114,13 @@ BDEPEND="${PYTHON_DEPS}
 	>=dev-util/cbindgen-0.24.3
 	net-libs/nodejs
 	virtual/pkgconfig
-	!clang? ( >=virtual/rust-1.65 )
+	!clang? ( virtual/rust )
+	!elibc_glibc? (
+		|| (
+			dev-lang/rust
+			<dev-lang/rust-bin-1.73
+		)
+	)
 	amd64? ( >=dev-lang/nasm-2.14 )
 	x86? ( >=dev-lang/nasm-2.14 )
 	pgo? (
@@ -116,15 +130,13 @@ BDEPEND="${PYTHON_DEPS}
 			x11-apps/xhost
 		)
 		!X? (
-			>=gui-libs/wlroots-0.15.1-r1[tinywl]
+			|| (
+				gui-wm/tinywl
+				<gui-libs/wlroots-0.17.3[tinywl(-)]
+			)
 			x11-misc/xkeyboard-config
 		)
-	)
-	app-crypt/gnupg
-	dev-vcs/mercurial
-	dev-python/jsonschema
-	net-misc/wget"
-
+	)"
 COMMON_DEPEND="${FF_ONLY_DEPEND}
 	>=app-accessibility/at-spi2-core-2.46.0:2
 	dev-libs/expat
@@ -235,7 +247,8 @@ llvm_check_deps() {
 
 		if use pgo ; then
 			if ! has_version -b "=sys-libs/compiler-rt-sanitizers-${LLVM_SLOT}*[profile]" ; then
-				einfo "=sys-libs/compiler-rt-sanitizers-${LLVM_SLOT}*[profile] is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
+				einfo "=sys-libs/compiler-rt-sanitizers-${LLVM_SLOT}*[profile] is missing!"
+				einfo "Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 				return 1
 			fi
 		fi
@@ -560,32 +573,6 @@ pkg_setup() {
 
 		# May need a wider addpredict when using wayland+pgo.
 		addpredict /dev/dri
-
-		# Allow access to GPU during PGO run
-		local ati_cards mesa_cards nvidia_cards render_cards
-		shopt -s nullglob
-
-		ati_cards=$(echo -n /dev/ati/card* | sed 's/ /:/g')
-		if [[ -n "${ati_cards}" ]] ; then
-			addpredict "${ati_cards}"
-		fi
-
-		mesa_cards=$(echo -n /dev/dri/card* | sed 's/ /:/g')
-		if [[ -n "${mesa_cards}" ]] ; then
-			addpredict "${mesa_cards}"
-		fi
-
-		nvidia_cards=$(echo -n /dev/nvidia* | sed 's/ /:/g')
-		if [[ -n "${nvidia_cards}" ]] ; then
-			addpredict "${nvidia_cards}"
-		fi
-
-		render_cards=$(echo -n /dev/dri/renderD128* | sed 's/ /:/g')
-		if [[ -n "${render_cards}" ]] ; then
-			addpredict "${render_cards}"
-		fi
-
-		shopt -u nullglob
 	fi
 
 	if ! mountpoint -q /dev/shm ; then
@@ -597,9 +584,10 @@ pkg_setup() {
 	# Ensure we use C locale when building, bug #746215
 	export LC_ALL=C
 
-	CONFIG_CHECK="~SECCOMP"
-	WARNING_SECCOMP="CONFIG_SECCOMP not set! This system will be unable to play DRM-protected content."
-	linux-info_pkg_setup
+	# probably unnecessary because we're not compiling with DRM support...
+	#CONFIG_CHECK="~SECCOMP"
+	#WARNING_SECCOMP="CONFIG_SECCOMP not set! This system will be unable to play DRM-protected content."
+	#linux-info_pkg_setup
 }
 
 src_unpack() {
@@ -667,11 +655,8 @@ _makeicecat() {
 }
 
 src_prepare() {
-	# run makeicecat
-	_makeicecat
-
-	# switch source to generated icecat sources
-	rm "$S" && ln -s "${WORKDIR}/firefox-${PV}" "$S" && cd "$S" || die
+	# temporarily switch to unpacked firefox sources
+	export S="${WORKDIR}/firefox-${PV}" && cd "$S" || die
 
 	if use lto; then
 		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
@@ -699,6 +684,21 @@ src_prepare() {
 		eapply "${FILESDIR}/patches/$(ver_cut 1)-unity-menubar.patch"
 		#eapply "${FILESDIR}/patches/show-window-buttons.patch"
 	fi
+
+	# KDE integration from OpenSUSE
+	if use kde; then
+		eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-toolkit.patch"
+		eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-browser.patch"
+	fi
+
+	# switch back to gnuzilla sources
+	export S="${WORKDIR}/icecat-${PV}" && cd "$S" || die
+
+	# run makeicecat after patches have been applied to avoid conflicts
+	_makeicecat
+
+	# switch source to generated icecat sources
+	export S="${WORKDIR}/firefox-${PV}" && cd "$S" || die
 
 	# apply custom fixes if useflag is enabled
 	if use custom-fixes; then
@@ -730,17 +730,25 @@ src_prepare() {
 		#eapply "${FILESDIR}/patches/$(ver_cut 1)-gconf-proxy.patch"
 	fi
 
-	# KDE integration from OpenSUSE
-	if use kde; then
-		eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-toolkit.patch"
-		eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-browser.patch"
-	fi
-
 	# Allow user to apply any additional patches without modifing ebuild
+	# NOTE: user patches apply to modified sources modified by makeicecat!
 	eapply_user
 
 	# Make cargo respect MAKEOPTS
 	export CARGO_BUILD_JOBS="$(makeopts_jobs)"
+
+	# Workaround for bgo#915651
+	if ! use elibc_glibc ; then
+		if use amd64 ; then
+			export RUST_TARGET="x86_64-unknown-linux-musl"
+		elif use x86 ; then
+			export RUST_TARGET="i686-unknown-linux-musl"
+		elif use arm64 ; then
+			export RUST_TARGET="aarch64-unknown-linux-musl"
+		else
+			die "Unknown musl chost, please post your rustc -vV along with emerge --info on Gentoo's bug #915651"
+		fi
+	fi
 
 	# Make LTO respect MAKEOPTS
 	sed -i \
@@ -907,6 +915,10 @@ src_configure() {
 		mozconfig_add_options_ac '' --enable-sandbox
 	fi
 
+	# Enable JIT on riscv64 explicitly
+	# Can be removed once upstream enable it by default in the future.
+	use riscv && mozconfig_add_options_ac 'Enable JIT for RISC-V 64' --enable-jit
+
 	mozconfig_use_with system-av1
 	mozconfig_use_with system-harfbuzz
 	mozconfig_use_with system-harfbuzz system-graphite2
@@ -1054,33 +1066,20 @@ src_configure() {
 		fi
 	fi
 
-	if use clang ; then
-		# https://bugzilla.mozilla.org/show_bug.cgi?id=1482204
-		# https://bugzilla.mozilla.org/show_bug.cgi?id=1483822
-		# toolkit/moz.configure Elfhack section: target.cpu in ('arm', 'x86', 'x86_64')
-		local disable_elf_hack=
-		if use amd64 ; then
-			disable_elf_hack=yes
-		elif use x86 ; then
-			disable_elf_hack=yes
-		elif use arm ; then
-			disable_elf_hack=yes
-		fi
-
-		if [[ -n ${disable_elf_hack} ]] ; then
-			mozconfig_add_options_ac 'elf-hack is broken when using Clang' --disable-elf-hack
-		fi
-	elif tc-is-gcc ; then
-		# looks like this isn't an issue anymore? --> see the bug
-		#if ver_test $(gcc-fullversion) -ge 10 ; then
-		#	einfo "Forcing -fno-tree-loop-vectorize to workaround GCC bug, see bug 758446 ..."
-		#	append-cxxflags -fno-tree-loop-vectorize
-		#fi
-		:
+	# With profile 23.0 elf-hack=legacy is broken with gcc.
+	# With Firefox-115esr elf-hack=relr isn't available (only in rapid).
+	# Solution: Disable build system's elf-hack completely, and add "-z,pack-relative-relocs"
+	#  manually with gcc.
+	#
+	# elf-hack configure option isn't available on ppc64/riscv, #916259, #929244, #930046.
+	if use ppc64 || use riscv ; then
+		:;
+	else
+		mozconfig_add_options_ac 'elf-hack disabled' --disable-elf-hack
 	fi
 
-	if use elibc_musl && use arm64 ; then
-		mozconfig_add_options_ac 'elf-hack is broken when using musl/arm64' --disable-elf-hack
+	if use amd64 || use x86 ; then
+		! use clang && append-ldflags "-z,pack-relative-relocs"
 	fi
 
 	# Additional ARCH support
@@ -1400,14 +1399,6 @@ pkg_postinst() {
 		ewarn "required EGL, so either disable 'hwaccel' or try the workaround "
 		ewarn "explained in https://bugs.gentoo.org/835078#c5 if IceCat crashes."
 	fi
-
-	elog
-	elog "Unfortunately IceCat-100.0 breaks compatibility with some sites using "
-	elog "useragent checks. To temporarily fix this, enter about:config and modify "
-	elog "network.http.useragent.forceVersion preference to \"99\"."
-	elog "Or install an addon to change your useragent."
-	elog "See: https://support.mozilla.org/en-US/kb/difficulties-opening-or-using-website-firefox-100"
-	elog
 
 	optfeature_header "Optional programs for extra features:"
 	optfeature "desktop notifications" x11-libs/libnotify
