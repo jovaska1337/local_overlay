@@ -7,6 +7,7 @@
 //  2. the old mozilla.cfg file                        //
 //  3. a new prefs.js generated with ffprofile.com     //
 /////////////////////////////////////////////////////////
+pref("dom.ipc.forkserver.enable", true);
 pref("accessibility.force_disabled", 1);
 //pref("accessibility.typeaheadfind", true);
 pref("app.normandy.api_url", "");

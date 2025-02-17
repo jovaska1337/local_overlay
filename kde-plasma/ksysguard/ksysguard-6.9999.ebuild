@@ -61,6 +61,7 @@ PATCHES=(
 	# remove when this gets merged
 	"${FILESDIR}/00-fix-plugins.patch"
 	#"${FILESDIR}/01-rename-processcore.patch"
+	"${FILESDIR}/02-fix-nvidia-smi.patch"
 )
 
 src_configure() {
