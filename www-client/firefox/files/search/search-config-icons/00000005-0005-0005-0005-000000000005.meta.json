@@ -1,0 +1,12 @@
+{
+    "schema": 1719499481123,
+    "imageSize": 16,
+    "attachment": {
+        "hash": "4a6f8c3376a11feb799262859ac3b48f1b78a0bd0b0e4bbf47331a7574a838b9",
+        "size": 1150
+    },
+    "engineIdentifiers": [ "searx" ],
+    "filter_expression": "1 == 1",
+    "id": "00000005-0005-0005-0005-000000000005",
+    "last_modified": 1719504277655
+}

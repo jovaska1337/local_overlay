@@ -1,0 +1,1655 @@
+--- b/modules/libpref/init/StaticPrefList.yaml
++++ a/modules/libpref/init/StaticPrefList.yaml
+@@ -15905,14 +15905,6 @@
+   mirror: always
+ #endif
+ 
+-# Whether native GTK global menubar support is enabled.
+-# Disabled because there are some minor bugs and it needs deeper integration
+-# with the front-end.
+-- name: widget.gtk.global-menu.enabled
+-  type: RelaxedAtomicBool
+-  value: false
+-  mirror: always
+-
+ # Whether native GTK context menus are enabled.
+ # Disabled because at the very least there's missing custom icon support.
+ - name: widget.gtk.native-context-menus
+--- b/widget/gtk/DBusMenu.cpp
++++ /dev/null
+@@ -1,67 +0,0 @@
+-/* -*- Mode: c++; tab-width: 2; indent-tabs-mode: nil; -*- */
+-/* This Source Code Form is subject to the terms of the Mozilla Public
+- * License, v. 2.0. If a copy of the MPL was not distributed with this
+- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+-
+-#include "DBusMenu.h"
+-#include "prlink.h"
+-#include "nsThreadUtils.h"
+-#include "mozilla/ArrayUtils.h"
+-
+-namespace mozilla::widget {
+-
+-#define FUNC(name, type, params) \
+-  DBusMenuFunctions::_##name##_fn DBusMenuFunctions::s_##name;
+-DBUSMENU_GLIB_FUNCTIONS
+-DBUSMENU_GTK_FUNCTIONS
+-#undef FUNC
+-
+-static PRLibrary* gDbusmenuGlib = nullptr;
+-static PRLibrary* gDbusmenuGtk = nullptr;
+-
+-using DBusMenuFunc = void (*)();
+-struct DBusMenuDynamicFunction {
+-  const char* functionName;
+-  DBusMenuFunc* function;
+-};
+-
+-static bool sInitialized;
+-static bool sLibPresent;
+-
+-/* static */ bool DBusMenuFunctions::Init() {
+-  MOZ_ASSERT(NS_IsMainThread());
+-  if (sInitialized) {
+-    return sLibPresent;
+-  }
+-  sInitialized = true;
+-#define FUNC(name, type, params) \
+-  {#name, (DBusMenuFunc*)&DBusMenuFunctions::s_##name},
+-  static const DBusMenuDynamicFunction kDbusmenuGlibSymbols[] = {
+-      DBUSMENU_GLIB_FUNCTIONS};
+-  static const DBusMenuDynamicFunction kDbusmenuGtkSymbols[] = {
+-      DBUSMENU_GTK_FUNCTIONS};
+-
+-#define LOAD_LIBRARY(symbol, name)                                            \
+-  if (!g##symbol) {                                                           \
+-    g##symbol = PR_LoadLibrary(name);                                         \
+-    if (!g##symbol) {                                                         \
+-      return false;                                                           \
+-    }                                                                         \
+-  }                                                                           \
+-  for (uint32_t i = 0; i < mozilla::ArrayLength(k##symbol##Symbols); ++i) {   \
+-    *k##symbol##Symbols[i].function =                                         \
+-        PR_FindFunctionSymbol(g##symbol, k##symbol##Symbols[i].functionName); \
+-    if (!*k##symbol##Symbols[i].function) {                                   \
+-      return false;                                                           \
+-    }                                                                         \
+-  }
+-
+-  LOAD_LIBRARY(DbusmenuGlib, "libdbusmenu-glib.so.4")
+-  LOAD_LIBRARY(DbusmenuGtk, "libdbusmenu-gtk3.so.4")
+-#undef LOAD_LIBRARY
+-
+-  sLibPresent = true;
+-  return true;
+-}
+-
+-}  // namespace mozilla::widget
+--- b/widget/gtk/DBusMenu.h
++++ /dev/null
+@@ -1,137 +0,0 @@
+-/* -*- Mode: c++; tab-width: 2; indent-tabs-mode: nil; -*- */
+-/* This Source Code Form is subject to the terms of the Mozilla Public
+- * License, v. 2.0. If a copy of the MPL was not distributed with this
+- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+-
+-#ifndef mozilla_widget_DBusMenu_h
+-#define mozilla_widget_DBusMenu_h
+-
+-#include <glib.h>
+-#include <gdk/gdk.h>
+-
+-namespace mozilla {
+-
+-namespace dom {
+-class Element;
+-}
+-
+-namespace widget {
+-
+-#define DBUSMENU_GLIB_FUNCTIONS                                              \
+-  FUNC(dbusmenu_menuitem_child_add_position, gboolean,                       \
+-       (DbusmenuMenuitem * mi, DbusmenuMenuitem * child, guint position))    \
+-  FUNC(dbusmenu_menuitem_set_root, void,                                     \
+-       (DbusmenuMenuitem * mi, gboolean root))                               \
+-  FUNC(dbusmenu_menuitem_child_append, gboolean,                             \
+-       (DbusmenuMenuitem * mi, DbusmenuMenuitem * child))                    \
+-  FUNC(dbusmenu_menuitem_child_delete, gboolean,                             \
+-       (DbusmenuMenuitem * mi, DbusmenuMenuitem * child))                    \
+-  FUNC(dbusmenu_menuitem_get_children, GList*, (DbusmenuMenuitem * mi))      \
+-  FUNC(dbusmenu_menuitem_new, DbusmenuMenuitem*, (void))                     \
+-  FUNC(dbusmenu_menuitem_property_get, const gchar*,                         \
+-       (DbusmenuMenuitem * mi, const gchar* property))                       \
+-  FUNC(dbusmenu_menuitem_property_get_bool, gboolean,                        \
+-       (DbusmenuMenuitem * mi, const gchar* property))                       \
+-  FUNC(dbusmenu_menuitem_property_remove, void,                              \
+-       (DbusmenuMenuitem * mi, const gchar* property))                       \
+-  FUNC(dbusmenu_menuitem_property_set, gboolean,                             \
+-       (DbusmenuMenuitem * mi, const gchar* property, const gchar* value))   \
+-  FUNC(dbusmenu_menuitem_property_set_bool, gboolean,                        \
+-       (DbusmenuMenuitem * mi, const gchar* property, const gboolean value)) \
+-  FUNC(dbusmenu_menuitem_property_set_int, gboolean,                         \
+-       (DbusmenuMenuitem * mi, const gchar* property, const gint value))     \
+-  FUNC(dbusmenu_menuitem_show_to_user, void,                                 \
+-       (DbusmenuMenuitem * mi, guint timestamp))                             \
+-  FUNC(dbusmenu_menuitem_take_children, GList*, (DbusmenuMenuitem * mi))     \
+-  FUNC(dbusmenu_server_new, DbusmenuServer*, (const gchar* object))          \
+-  FUNC(dbusmenu_server_set_root, void,                                       \
+-       (DbusmenuServer * server, DbusmenuMenuitem * root))                   \
+-  FUNC(dbusmenu_server_set_status, void,                                     \
+-       (DbusmenuServer * server, DbusmenuStatus status))
+-
+-#define DBUSMENU_GTK_FUNCTIONS                              \
+-  FUNC(dbusmenu_menuitem_property_set_image, gboolean,      \
+-       (DbusmenuMenuitem * menuitem, const gchar* property, \
+-        const GdkPixbuf* data))                             \
+-  FUNC(dbusmenu_menuitem_property_set_shortcut, gboolean,   \
+-       (DbusmenuMenuitem * menuitem, guint key, GdkModifierType modifier))
+-
+-typedef struct _DbusmenuMenuitem DbusmenuMenuitem;
+-typedef struct _DbusmenuServer DbusmenuServer;
+-
+-enum DbusmenuStatus { DBUSMENU_STATUS_NORMAL, DBUSMENU_STATUS_NOTICE };
+-
+-#define DBUSMENU_MENUITEM_CHILD_DISPLAY_SUBMENU "submenu"
+-#define DBUSMENU_MENUITEM_PROP_CHILD_DISPLAY "children-display"
+-#define DBUSMENU_MENUITEM_PROP_ENABLED "enabled"
+-#define DBUSMENU_MENUITEM_PROP_ICON_DATA "icon-data"
+-#define DBUSMENU_MENUITEM_PROP_LABEL "label"
+-#define DBUSMENU_MENUITEM_PROP_SHORTCUT "shortcut"
+-#define DBUSMENU_MENUITEM_PROP_TYPE "type"
+-#define DBUSMENU_MENUITEM_PROP_TOGGLE_STATE "toggle-state"
+-#define DBUSMENU_MENUITEM_PROP_TOGGLE_TYPE "toggle-type"
+-#define DBUSMENU_MENUITEM_PROP_VISIBLE "visible"
+-#define DBUSMENU_MENUITEM_SIGNAL_ABOUT_TO_SHOW "about-to-show"
+-#define DBUSMENU_MENUITEM_SIGNAL_EVENT "event"
+-#define DBUSMENU_MENUITEM_SIGNAL_ITEM_ACTIVATED "item-activated"
+-#define DBUSMENU_MENUITEM_TOGGLE_CHECK "checkmark"
+-#define DBUSMENU_MENUITEM_TOGGLE_RADIO "radio"
+-#define DBUSMENU_MENUITEM_TOGGLE_STATE_CHECKED 1
+-#define DBUSMENU_MENUITEM_TOGGLE_STATE_UNCHECKED 0
+-#define DBUSMENU_SERVER_PROP_DBUS_OBJECT "dbus-object"
+-
+-class DBusMenuFunctions {
+- public:
+-  DBusMenuFunctions() = delete;
+-
+-  static bool Init();
+-
+-#define FUNC(name, type, params)      \
+-  typedef type(*_##name##_fn) params; \
+-  static _##name##_fn s_##name;
+-  DBUSMENU_GLIB_FUNCTIONS
+-  DBUSMENU_GTK_FUNCTIONS
+-#undef FUNC
+-};
+-
+-#define dbusmenu_menuitem_set_root \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_set_root
+-#define dbusmenu_menuitem_child_add_position \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_child_add_position
+-#define dbusmenu_menuitem_child_append \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_child_append
+-#define dbusmenu_menuitem_child_delete \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_child_delete
+-#define dbusmenu_menuitem_get_children \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_get_children
+-#define dbusmenu_menuitem_new DBusMenuFunctions::s_dbusmenu_menuitem_new
+-#define dbusmenu_menuitem_property_get \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_property_get
+-#define dbusmenu_menuitem_property_get_bool \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_property_get_bool
+-#define dbusmenu_menuitem_property_remove \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_property_remove
+-#define dbusmenu_menuitem_property_set \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_property_set
+-#define dbusmenu_menuitem_property_set_bool \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_property_set_bool
+-#define dbusmenu_menuitem_property_set_int \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_property_set_int
+-#define dbusmenu_menuitem_show_to_user \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_show_to_user
+-#define dbusmenu_menuitem_take_children \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_take_children
+-#define dbusmenu_server_new DBusMenuFunctions::s_dbusmenu_server_new
+-#define dbusmenu_server_set_root DBusMenuFunctions::s_dbusmenu_server_set_root
+-#define dbusmenu_server_set_status \
+-  DBusMenuFunctions::s_dbusmenu_server_set_status
+-
+-#define dbusmenu_menuitem_property_set_image \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_property_set_image
+-#define dbusmenu_menuitem_property_set_shortcut \
+-  DBusMenuFunctions::s_dbusmenu_menuitem_property_set_shortcut
+-
+-}  // namespace widget
+-}  // namespace mozilla
+-
+-#endif
+--- b/widget/gtk/GRefPtr.h
++++ a/widget/gtk/GRefPtr.h
+@@ -13,9 +13,6 @@
+ #include <gtk/gtk.h>
+ #include "mozilla/RefPtr.h"
+ 
+-typedef struct _DbusmenuMenuitem DbusmenuMenuitem;
+-typedef struct _DbusmenuServer DbusmenuServer;
+-
+ namespace mozilla {
+ 
+ template <typename T>
+@@ -28,8 +25,6 @@
+   template <>                 \
+   struct RefPtrTraits<type_> : public GObjectRefPtrTraits<type_> {};
+ 
+-GOBJECT_TRAITS(DbusmenuMenuitem)
+-GOBJECT_TRAITS(DbusmenuServer)
+ GOBJECT_TRAITS(GtkWidget)
+ GOBJECT_TRAITS(GFile)
+ GOBJECT_TRAITS(GFileMonitor)
+--- b/widget/gtk/NativeMenuGtk.cpp
++++ a/widget/gtk/NativeMenuGtk.cpp
+@@ -4,9 +4,6 @@
+  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
+ #include "NativeMenuGtk.h"
+-#include "AsyncDBus.h"
+-#include "gdk/gdkkeysyms-compat.h"
+-#include "mozilla/BasicEvents.h"
+ #include "mozilla/dom/Document.h"
+ #include "mozilla/dom/DocumentInlines.h"
+ #include "mozilla/dom/XULCommandEvent.h"
+@@ -18,9 +15,6 @@
+ #include "nsStubMutationObserver.h"
+ #include "mozilla/dom/Element.h"
+ #include "mozilla/StaticPrefs_widget.h"
+-#include "DBusMenu.h"
+-#include "nsLayoutUtils.h"
+-#include "nsGtkKeyUtils.h"
+ 
+ #include <dlfcn.h>
+ #include <gtk/gtk.h>
+@@ -41,8 +35,7 @@
+ }
+ static bool NodeIsRelevant(const nsINode& aNode) {
+   return aNode.IsAnyOfXULElements(nsGkAtoms::menu, nsGkAtoms::menuseparator,
++                                  nsGkAtoms::menuitem, nsGkAtoms::menugroup);
+-                                  nsGkAtoms::menuitem, nsGkAtoms::menugroup,
+-                                  nsGkAtoms::menubar);
+ }
+ 
+ // If this is a radio / checkbox menuitem, get the current value.
+@@ -162,7 +155,7 @@
+   mNextActionIndex = 0;
+ }
+ 
++class MenuModel final : public nsStubMutationObserver {
+-class MenuModel : public nsStubMutationObserver {
+   NS_DECL_ISUPPORTS
+ 
+   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
+@@ -173,60 +166,41 @@
+  public:
+   explicit MenuModel(dom::Element* aElement) : mElement(aElement) {
+     mElement->AddMutationObserver(this);
++    mGMenu = dont_AddRef(g_menu_new());
++    mActions.mGroup = dont_AddRef(g_simple_action_group_new());
++  }
++
++  GMenuModel* GetModel() { return G_MENU_MODEL(mGMenu.get()); }
++  GActionGroup* GetActionGroup() {
++    return G_ACTION_GROUP(mActions.mGroup.get());
+   }
+ 
+   dom::Element* Element() { return mElement; }
+ 
++  void RecomputeModelIfNeeded();
+-  void RecomputeModelIfNeeded() {
+-    if (!mDirty) {
+-      return;
+-    }
+-    RecomputeModel();
+-    mDirty = false;
+-  }
+ 
++  bool IsShowing() { return mPoppedUp; }
+-  bool IsShowing() { return mShowing; }
+   void WillShow() {
++    mPoppedUp = true;
+-    mShowing = true;
+     RecomputeModelIfNeeded();
+   }
++  void DidHide() { mPoppedUp = false; }
+-  void DidHide() { mShowing = false; }
+ 
++ private:
+- protected:
+-  virtual void RecomputeModel() = 0;
+   virtual ~MenuModel() { mElement->RemoveMutationObserver(this); }
+ 
+   void DirtyModel() {
+     mDirty = true;
++    if (mPoppedUp) {
+-    if (mShowing) {
+       RecomputeModelIfNeeded();
+     }
+   }
+ 
+   RefPtr<dom::Element> mElement;
+-  bool mDirty = true;
+-  bool mShowing = false;
+-};
+-
+-class MenuModelGMenu final : public MenuModel {
+- public:
+-  explicit MenuModelGMenu(dom::Element* aElement) : MenuModel(aElement) {
+-    mGMenu = dont_AddRef(g_menu_new());
+-    mActions.mGroup = dont_AddRef(g_simple_action_group_new());
+-  }
+-
+-  GMenuModel* GetModel() { return G_MENU_MODEL(mGMenu.get()); }
+-  GActionGroup* GetActionGroup() {
+-    return G_ACTION_GROUP(mActions.mGroup.get());
+-  }
+-
+- protected:
+-  void RecomputeModel() override;
+-  static void RecomputeModelFor(GMenu* aMenu, Actions& aActions,
+-                                const dom::Element& aElement);
+-
+   RefPtr<GMenu> mGMenu;
+   Actions mActions;
++  bool mDirty = true;
++  bool mPoppedUp = false;
+ };
+ 
+ NS_IMPL_ISUPPORTS(MenuModel, nsIMutationObserver)
+@@ -269,8 +243,8 @@
+   return nullptr;
+ }
+ 
++static void RecomputeModelFor(GMenu* aMenu, Actions& aActions,
++                              const dom::Element& aElement) {
+-void MenuModelGMenu::RecomputeModelFor(GMenu* aMenu, Actions& aActions,
+-                                       const dom::Element& aElement) {
+   RefPtr<GMenu> sectionMenu;
+   auto FlushSectionMenu = [&] {
+     if (sectionMenu) {
+@@ -331,7 +305,10 @@
+   FlushSectionMenu();
+ }
+ 
++void MenuModel::RecomputeModelIfNeeded() {
++  if (!mDirty) {
++    return;
++  }
+-void MenuModelGMenu::RecomputeModel() {
+   mActions.Clear();
+   g_menu_remove_all(mGMenu.get());
+   RecomputeModelFor(mGMenu.get(), mActions, *mElement);
+@@ -364,7 +341,7 @@
+ #undef METHOD_SIGNAL
+ 
+ NativeMenuGtk::NativeMenuGtk(dom::Element* aElement)
++    : mMenuModel(MakeRefPtr<MenuModel>(aElement)) {
+-    : mMenuModel(MakeRefPtr<MenuModelGMenu>(aElement)) {
+   // Floating, so no need to dont_AddRef.
+   mNativeMenu = gtk_menu_new_from_model(mMenuModel->GetModel());
+   gtk_widget_insert_action_group(mNativeMenu.get(), "menu",
+@@ -444,373 +421,4 @@
+   // TODO: For testing mostly.
+ }
+ 
+-class MenubarModelDBus final : public MenuModel {
+- public:
+-  explicit MenubarModelDBus(dom::Element* aElement) : MenuModel(aElement) {
+-    mRoot = dont_AddRef(dbusmenu_menuitem_new());
+-    dbusmenu_menuitem_set_root(mRoot.get(), true);
+-    mShowing = true;
+-  }
+-
+-  DbusmenuMenuitem* Root() const { return mRoot.get(); }
+-
+- protected:
+-  void RecomputeModel() override;
+-  static void AppendMenuItem(DbusmenuMenuitem* aParent,
+-                             const dom::Element* aElement);
+-  static void AppendSeparator(DbusmenuMenuitem* aParent);
+-  static void AppendSubmenu(DbusmenuMenuitem* aParent,
+-                            const dom::Element* aMenu,
+-                            const dom::Element* aPopup);
+-  static uint RecomputeModelFor(DbusmenuMenuitem* aParent,
+-                                const dom::Element& aElement);
+-
+-  RefPtr<DbusmenuMenuitem> mRoot;
+-};
+-
+-void MenubarModelDBus::RecomputeModel() {
+-  while (GList* children = dbusmenu_menuitem_get_children(mRoot.get())) {
+-    auto* first = static_cast<DbusmenuMenuitem*>(children->data);
+-    if (!first) {
+-      break;
+-    }
+-    dbusmenu_menuitem_child_delete(mRoot.get(), first);
+-  }
+-  RecomputeModelFor(mRoot, *Element());
+-}
+-
+-static const dom::Element* RelevantElementForKeys(
+-    const dom::Element* aElement) {
+-  nsAutoString key;
+-  aElement->GetAttr(nsGkAtoms::key, key);
+-  if (!key.IsEmpty()) {
+-    dom::Document* document = aElement->OwnerDoc();
+-    dom::Element* element = document->GetElementById(key);
+-    if (element) {
+-      return element;
+-    }
+-  }
+-  return aElement;
+-}
+-
+-static uint32_t ParseKey(const nsAString& aKey, const nsAString& aKeyCode) {
+-  guint key = 0;
+-  if (!aKey.IsEmpty()) {
+-    key = gdk_unicode_to_keyval(*aKey.BeginReading());
+-  }
+-
+-  if (key == 0 && !aKeyCode.IsEmpty()) {
+-    key = KeymapWrapper::ConvertGeckoKeyCodeToGDKKeyval(aKeyCode);
+-  }
+-
+-  return key;
+-}
+-
+-static uint32_t KeyFrom(const dom::Element* aElement) {
+-  const auto* element = RelevantElementForKeys(aElement);
+-
+-  nsAutoString key;
+-  nsAutoString keycode;
+-  element->GetAttr(nsGkAtoms::key, key);
+-  element->GetAttr(nsGkAtoms::keycode, keycode);
+-
+-  return ParseKey(key, keycode);
+-}
+-
+-// TODO(emilio): Unifiy with nsMenuUtilsX::GeckoModifiersForNodeAttribute (or
+-// at least switch to strtok_r).
+-static uint32_t ParseModifiers(const nsAString& aModifiers) {
+-  if (aModifiers.IsEmpty()) {
+-    return 0;
+-  }
+-
+-  uint32_t modifier = 0;
+-  char* str = ToNewUTF8String(aModifiers);
+-  char* token = strtok(str, ", \t");
+-  while (token) {
+-    if (nsCRT::strcmp(token, "shift") == 0) {
+-      modifier |= GDK_SHIFT_MASK;
+-    } else if (nsCRT::strcmp(token, "alt") == 0) {
+-      modifier |= GDK_MOD1_MASK;
+-    } else if (nsCRT::strcmp(token, "meta") == 0) {
+-      modifier |= GDK_META_MASK;
+-    } else if (nsCRT::strcmp(token, "control") == 0) {
+-      modifier |= GDK_CONTROL_MASK;
+-    } else if (nsCRT::strcmp(token, "accel") == 0) {
+-      auto accel = WidgetInputEvent::AccelModifier();
+-      if (accel == MODIFIER_META) {
+-        modifier |= GDK_META_MASK;
+-      } else if (accel == MODIFIER_ALT) {
+-        modifier |= GDK_MOD1_MASK;
+-      } else if (accel == MODIFIER_CONTROL) {
+-        modifier |= GDK_CONTROL_MASK;
+-      }
+-    }
+-
+-    token = strtok(nullptr, ", \t");
+-  }
+-
+-  free(str);
+-
+-  return modifier;
+-}
+-
+-static uint32_t ModifiersFrom(const dom::Element* aContent) {
+-  const auto* element = RelevantElementForKeys(aContent);
+-
+-  nsAutoString modifiers;
+-  element->GetAttr(nsGkAtoms::modifiers, modifiers);
+-
+-  return ParseModifiers(modifiers);
+-}
+-
+-static void UpdateAccel(DbusmenuMenuitem* aItem, const nsIContent* aContent) {
+-  uint32_t key = KeyFrom(aContent->AsElement());
+-  if (key != 0) {
+-    dbusmenu_menuitem_property_set_shortcut(
+-        aItem, key,
+-        static_cast<GdkModifierType>(ModifiersFrom(aContent->AsElement())));
+-  }
+-}
+-
+-static void UpdateRadioOrCheck(DbusmenuMenuitem* aItem,
+-                               const dom::Element* aContent) {
+-  static mozilla::dom::Element::AttrValuesArray attrs[] = {
+-      nsGkAtoms::checkbox, nsGkAtoms::radio, nullptr};
+-  int32_t type = aContent->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::type,
+-                                           attrs, eCaseMatters);
+-
+-  if (type < 0 || type >= 2) {
+-    return;
+-  }
+-
+-  if (type == 0) {
+-    dbusmenu_menuitem_property_set(aItem, DBUSMENU_MENUITEM_PROP_TOGGLE_TYPE,
+-                                   DBUSMENU_MENUITEM_TOGGLE_CHECK);
+-  } else {
+-    dbusmenu_menuitem_property_set(aItem, DBUSMENU_MENUITEM_PROP_TOGGLE_TYPE,
+-                                   DBUSMENU_MENUITEM_TOGGLE_RADIO);
+-  }
+-
+-  bool isChecked = aContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::checked,
+-                                         nsGkAtoms::_true, eCaseMatters);
+-  dbusmenu_menuitem_property_set_int(
+-      aItem, DBUSMENU_MENUITEM_PROP_TOGGLE_STATE,
+-      isChecked ? DBUSMENU_MENUITEM_TOGGLE_STATE_CHECKED
+-                : DBUSMENU_MENUITEM_TOGGLE_STATE_UNCHECKED);
+-}
+-
+-static void UpdateEnabled(DbusmenuMenuitem* aItem, const nsIContent* aContent) {
+-  bool disabled = aContent->AsElement()->AttrValueIs(
+-      kNameSpaceID_None, nsGkAtoms::disabled, nsGkAtoms::_true, eCaseMatters);
+-
+-  dbusmenu_menuitem_property_set_bool(aItem, DBUSMENU_MENUITEM_PROP_ENABLED,
+-                                      !disabled);
+-}
+-
+-// we rebuild the dbus model when elements are removed from the DOM,
+-// so this isn't going to trigger for asynchronous
+-static MOZ_CAN_RUN_SCRIPT void DBusActivationCallback(
+-    DbusmenuMenuitem* aMenuitem, guint aTimestamp, gpointer aUserData) {
+-  RefPtr element = static_cast<dom::Element*>(aUserData);
+-  ActivateItem(*element);
+-}
+-
+-static void ConnectActivated(DbusmenuMenuitem* aItem,
+-                             const dom::Element* aContent) {
+-  g_signal_connect(G_OBJECT(aItem), DBUSMENU_MENUITEM_SIGNAL_ITEM_ACTIVATED,
+-                   G_CALLBACK(DBusActivationCallback),
+-                   const_cast<dom::Element*>(aContent));
+-}
+-
+-static MOZ_CAN_RUN_SCRIPT void DBusAboutToShowCallback(
+-    DbusmenuMenuitem* aMenuitem, gpointer aUserData) {
+-  RefPtr element = static_cast<dom::Element*>(aUserData);
+-  FireEvent(element, eXULPopupShowing);
+-  FireEvent(element, eXULPopupShown);
+-}
+-
+-static void ConnectAboutToShow(DbusmenuMenuitem* aItem,
+-                               const dom::Element* aContent) {
+-  g_signal_connect(G_OBJECT(aItem), DBUSMENU_MENUITEM_SIGNAL_ABOUT_TO_SHOW,
+-                   G_CALLBACK(DBusAboutToShowCallback),
+-                   const_cast<dom::Element*>(aContent));
+-}
+-
+-void MenubarModelDBus::AppendMenuItem(DbusmenuMenuitem* aParent,
+-                                      const dom::Element* aChild) {
+-  nsAutoString label;
+-  aChild->GetAttr(nsGkAtoms::label, label);
+-  if (label.IsEmpty()) {
+-    aChild->GetAttr(nsGkAtoms::aria_label, label);
+-  }
+-  RefPtr<DbusmenuMenuitem> child = dont_AddRef(dbusmenu_menuitem_new());
+-  dbusmenu_menuitem_property_set(child, DBUSMENU_MENUITEM_PROP_LABEL,
+-                                 NS_ConvertUTF16toUTF8(label).get());
+-  dbusmenu_menuitem_child_append(aParent, child);
+-  UpdateAccel(child, aChild);
+-  UpdateRadioOrCheck(child, aChild);
+-  UpdateEnabled(child, aChild);
+-  ConnectActivated(child, aChild);
+-  // TODO: icons
+-}
+-
+-void MenubarModelDBus::AppendSeparator(DbusmenuMenuitem* aParent) {
+-  RefPtr<DbusmenuMenuitem> child = dont_AddRef(dbusmenu_menuitem_new());
+-  dbusmenu_menuitem_property_set(child, DBUSMENU_MENUITEM_PROP_TYPE,
+-                                 "separator");
+-  dbusmenu_menuitem_child_append(aParent, child);
+-}
+-
+-void MenubarModelDBus::AppendSubmenu(DbusmenuMenuitem* aParent,
+-                                     const dom::Element* aMenu,
+-                                     const dom::Element* aPopup) {
+-  RefPtr<DbusmenuMenuitem> submenu = dont_AddRef(dbusmenu_menuitem_new());
+-  if (RecomputeModelFor(submenu, *aPopup) == 0) {
+-    RefPtr<DbusmenuMenuitem> placeholder = dont_AddRef(dbusmenu_menuitem_new());
+-    dbusmenu_menuitem_child_append(submenu, placeholder);
+-  }
+-  nsAutoString label;
+-  aMenu->GetAttr(nsGkAtoms::label, label);
+-  ConnectAboutToShow(submenu, aPopup);
+-  dbusmenu_menuitem_property_set(submenu, DBUSMENU_MENUITEM_PROP_LABEL,
+-                                 NS_ConvertUTF16toUTF8(label).get());
+-  dbusmenu_menuitem_child_append(aParent, submenu);
+-}
+-
+-uint MenubarModelDBus::RecomputeModelFor(DbusmenuMenuitem* aParent,
+-                                         const dom::Element& aElement) {
+-  uint childCount = 0;
+-  for (const nsIContent* child = aElement.GetFirstChild(); child;
+-       child = child->GetNextSibling()) {
+-    if (child->IsXULElement(nsGkAtoms::menuitem) &&
+-        !IsDisabled(*child->AsElement())) {
+-      AppendMenuItem(aParent, child->AsElement());
+-      childCount++;
+-      continue;
+-    }
+-    if (child->IsXULElement(nsGkAtoms::menuseparator)) {
+-      AppendSeparator(aParent);
+-      childCount++;
+-      continue;
+-    }
+-    if (child->IsXULElement(nsGkAtoms::menu) &&
+-        !IsDisabled(*child->AsElement())) {
+-      if (const auto* popup = GetMenuPopupChild(*child->AsElement())) {
+-        childCount++;
+-        AppendSubmenu(aParent, child->AsElement(), popup);
+-      }
+-    }
+-  }
+-  return childCount;
+-}
+-
+-void DBusMenuBar::NameOwnerChangedCallback(GObject*, GParamSpec*,
+-                                           gpointer user_data) {
+-  static_cast<DBusMenuBar*>(user_data)->OnNameOwnerChanged();
+-}
+-
+-void DBusMenuBar::OnNameOwnerChanged() {
+-  GUniquePtr<gchar> nameOwner(g_dbus_proxy_get_name_owner(mProxy));
+-  if (!nameOwner) {
+-    return;
+-  }
+-
+-  RefPtr win = mMenuModel->Element()->OwnerDoc()->GetInnerWindow();
+-  if (NS_WARN_IF(!win)) {
+-    return;
+-  }
+-  nsIWidget* widget = nsGlobalWindowInner::Cast(win.get())->GetNearestWidget();
+-  if (NS_WARN_IF(!widget)) {
+-    return;
+-  }
+-  auto* gdkWin =
+-      static_cast<GdkWindow*>(widget->GetNativeData(NS_NATIVE_WINDOW));
+-  if (NS_WARN_IF(!gdkWin)) {
+-    return;
+-  }
+-
+-  if (auto* display = widget::WaylandDisplayGet()) {
+-    // modern path
+-
+-    xdg_dbus_annotation_manager_v1* annotationManager =
+-        display->GetXdgDbusAnnotationManager();
+-    if (annotationManager == nullptr) {
+-      NS_WARNING("annotation manager is not there");
+-      return;
+-    }
+-
+-    wl_surface* surface = gdk_wayland_window_get_wl_surface(gdkWin);
+-
+-    if (surface == nullptr) {
+-      NS_WARNING("surface is not there");
+-      return;
+-    }
+-
+-    xdg_dbus_annotation_v1* annotation =
+-        xdg_dbus_annotation_manager_v1_create_surface(
+-            annotationManager, "com.canonical.dbusmenu", surface);
+-
+-    GDBusConnection* connection = g_dbus_proxy_get_connection(mProxy);
+-    const char* myServiceName = g_dbus_connection_get_unique_name(connection);
+-    if (!myServiceName) {
+-      NS_WARNING("we do not have a unique name on the bus");
+-      return;
+-    }
+-
+-    xdg_dbus_annotation_v1_set_address(annotation, myServiceName,
+-                                       mObjectPath.get());
+-
+-    mAnnotation = annotation;
+-  } else {
+-    // legacy path
+-    auto xid = GDK_WINDOW_XID(gdkWin);
+-    widget::DBusProxyCall(mProxy, "RegisterWindow",
+-                          g_variant_new("(uo)", xid, mObjectPath.get()),
+-                          G_DBUS_CALL_FLAGS_NONE)
+-        ->Then(
+-            GetCurrentSerialEventTarget(), __func__,
+-            [self = RefPtr{this}](RefPtr<GVariant>&& aResult) {
+-              self->mMenuModel->Element()->SetBoolAttr(nsGkAtoms::hidden, true);
+-            },
+-            [self = RefPtr{this}](GUniquePtr<GError>&& aError) {
+-              g_printerr("Failed to register window menubar: %s\n",
+-                         aError->message);
+-              self->mMenuModel->Element()->SetBoolAttr(nsGkAtoms::hidden,
+-                                                       false);
+-            });
+-  }
+-}
+-
+-static unsigned sID = 0;
+-
+-DBusMenuBar::DBusMenuBar(dom::Element* aElement)
+-    : mObjectPath(nsPrintfCString("/com/canonical/menu/%u", sID++)),
+-      mMenuModel(MakeRefPtr<MenubarModelDBus>(aElement)),
+-      mServer(dont_AddRef(dbusmenu_server_new(mObjectPath.get()))) {
+-  mMenuModel->RecomputeModelIfNeeded();
+-  dbusmenu_server_set_root(mServer.get(), mMenuModel->Root());
+-  widget::CreateDBusProxyForBus(
+-      G_BUS_TYPE_SESSION,
+-      GDBusProxyFlags(G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
+-                      G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS |
+-                      G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START),
+-      nullptr, "com.canonical.AppMenu.Registrar",
+-      "/com/canonical/AppMenu/Registrar", "com.canonical.AppMenu.Registrar")
+-      ->Then(
+-          GetCurrentSerialEventTarget(), __func__,
+-          [self = RefPtr{this}](RefPtr<GDBusProxy>&& aProxy) {
+-            self->mProxy = std::move(aProxy);
+-            g_signal_connect(self->mProxy, "notify::g-name-owner",
+-                             G_CALLBACK(NameOwnerChangedCallback), self.get());
+-            self->OnNameOwnerChanged();
+-          },
+-          [self = RefPtr{this}](GUniquePtr<GError>&& aError) {
+-            g_printerr("Failed to create DBUS proxy for menubar: %s\n",
+-                       aError->message);
+-          });
+-}
+-
+-DBusMenuBar::~DBusMenuBar() = default;
+-
+ }  // namespace mozilla::widget
+--- b/widget/gtk/NativeMenuGtk.h
++++ a/widget/gtk/NativeMenuGtk.h
+@@ -7,13 +7,10 @@
+ #ifndef mozilla_widget_NativeMenuGtk_h
+ #define mozilla_widget_NativeMenuGtk_h
+ 
+-#include "mozilla/RefCounted.h"
+ #include "mozilla/widget/NativeMenu.h"
+ #include "mozilla/EventForwards.h"
+ #include "GRefPtr.h"
+ 
+-struct xdg_dbus_annotation_v1;
+-
+ namespace mozilla {
+ 
+ namespace dom {
+@@ -22,8 +19,7 @@
+ 
+ namespace widget {
+ 
++class MenuModel;
+-class MenuModelGMenu;
+-class MenubarModelDBus;
+ 
+ class NativeMenuGtk : public NativeMenu {
+  public:
+@@ -58,27 +54,10 @@
+ 
+   bool mPoppedUp = false;
+   RefPtr<GtkWidget> mNativeMenu;
++  RefPtr<MenuModel> mMenuModel;
+-  RefPtr<MenuModelGMenu> mMenuModel;
+   nsTArray<NativeMenu::Observer*> mObservers;
+ };
+ 
+-class DBusMenuBar final : public RefCounted<DBusMenuBar> {
+- public:
+-  MOZ_DECLARE_REFCOUNTED_TYPENAME(DBusMenuBar)
+-  explicit DBusMenuBar(dom::Element* aElement);
+-  ~DBusMenuBar();
+-
+- protected:
+-  static void NameOwnerChangedCallback(GObject*, GParamSpec*, gpointer);
+-  void OnNameOwnerChanged();
+-
+-  nsCString mObjectPath;
+-  RefPtr<MenubarModelDBus> mMenuModel;
+-  RefPtr<DbusmenuServer> mServer;
+-  RefPtr<GDBusProxy> mProxy;
+-  xdg_dbus_annotation_v1* mAnnotation = nullptr;
+-};
+-
+ }  // namespace widget
+ }  // namespace mozilla
+ 
+--- b/widget/gtk/NativeMenuSupport.cpp
++++ a/widget/gtk/NativeMenuSupport.cpp
+@@ -5,11 +5,8 @@
+ 
+ #include "mozilla/widget/NativeMenuSupport.h"
+ 
+-#include "mozilla/StaticPrefs_widget.h"
+ #include "MainThreadUtils.h"
+ #include "NativeMenuGtk.h"
+-#include "DBusMenu.h"
+-#include "nsWindow.h"
+ 
+ namespace mozilla::widget {
+ 
+@@ -17,12 +14,7 @@
+                                             dom::Element* aMenuBarElement) {
+   MOZ_RELEASE_ASSERT(NS_IsMainThread(),
+                      "Attempting to create native menu bar on wrong thread!");
++  // TODO
+-
+-  if (aMenuBarElement && StaticPrefs::widget_gtk_global_menu_enabled() &&
+-      DBusMenuFunctions::Init()) {
+-    static_cast<nsWindow*>(aParent)->SetDBusMenuBar(
+-        MakeRefPtr<DBusMenuBar>(aMenuBarElement));
+-  }
+ }
+ 
+ already_AddRefed<NativeMenu> NativeMenuSupport::CreateNativeContextMenu(
+--- b/widget/gtk/moz.build
++++ a/widget/gtk/moz.build
+@@ -63,7 +63,6 @@
+     "AsyncGtkClipboardRequest.cpp",
+     "CompositorWidgetChild.cpp",
+     "CompositorWidgetParent.cpp",
+-    "DBusMenu.cpp",
+     "DMABufLibWrapper.cpp",
+     "DMABufSurface.cpp",
+     "GfxInfo.cpp",
+--- b/widget/gtk/nsGtkKeyUtils.cpp
++++ a/widget/gtk/nsGtkKeyUtils.cpp
+@@ -2125,212 +2125,6 @@
+   return keyval;
+ }
+ 
+-struct KeyCodeData {
+-  const char* str;
+-  size_t strlength;
+-  uint32_t keycode;
+-};
+-
+-static struct KeyCodeData gKeyCodes[] = {
+-#define NS_DEFINE_VK(aDOMKeyName, aDOMKeyCode) \
+-  {#aDOMKeyName, sizeof(#aDOMKeyName) - 1, aDOMKeyCode},
+-#include "mozilla/VirtualKeyCodeList.h"
+-#undef NS_DEFINE_VK
+-    {nullptr, 0, 0}};
+-
+-struct KeyPair {
+-  uint32_t DOMKeyCode;
+-  guint GDKKeyval;
+-};
+-
+-//
+-// Netscape keycodes are defined in widget/public/nsGUIEvent.h
+-// GTK keycodes are defined in <gdk/gdkkeysyms.h>
+-//
+-static const KeyPair gKeyPairs[] = {
+-    {NS_VK_CANCEL, GDK_Cancel},
+-    {NS_VK_BACK, GDK_BackSpace},
+-    {NS_VK_TAB, GDK_Tab},
+-    {NS_VK_CLEAR, GDK_Clear},
+-    {NS_VK_RETURN, GDK_Return},
+-    {NS_VK_SHIFT, GDK_Shift_L},
+-    {NS_VK_CONTROL, GDK_Control_L},
+-    {NS_VK_ALT, GDK_Alt_L},
+-    {NS_VK_META, GDK_Meta_L},
+-
+-    // Assume that Super or Hyper is always mapped to physical Win key.
+-    {NS_VK_WIN, GDK_Super_L},
+-
+-    // GTK's AltGraph key is similar to Mac's Option (Alt) key.  However,
+-    // unfortunately, browsers on Mac are using NS_VK_ALT for it even though
+-    // it's really different from Alt key on Windows.
+-    // On the other hand, GTK's AltGrapsh keys are really different from
+-    // Alt key.  However, there is no AltGrapsh key on Windows.  On Windows,
+-    // both Ctrl and Alt keys are pressed internally when AltGr key is pressed.
+-    // For some languages' users, AltGraph key is important, so, web
+-    // applications on such locale may want to know AltGraph key press.
+-    // Therefore, we should map AltGr keycode for them only on GTK.
+-    {NS_VK_ALTGR, GDK_ISO_Level3_Shift},
+-
+-    {NS_VK_PAUSE, GDK_Pause},
+-    {NS_VK_CAPS_LOCK, GDK_Caps_Lock},
+-    {NS_VK_ESCAPE, GDK_Escape},
+-    // { NS_VK_ACCEPT,     GDK_XXX },
+-    // { NS_VK_MODECHANGE, GDK_XXX },
+-    {NS_VK_SPACE, GDK_space},
+-    {NS_VK_PAGE_UP, GDK_Page_Up},
+-    {NS_VK_PAGE_DOWN, GDK_Page_Down},
+-    {NS_VK_END, GDK_End},
+-    {NS_VK_HOME, GDK_Home},
+-    {NS_VK_LEFT, GDK_Left},
+-    {NS_VK_UP, GDK_Up},
+-    {NS_VK_RIGHT, GDK_Right},
+-    {NS_VK_DOWN, GDK_Down},
+-    {NS_VK_SELECT, GDK_Select},
+-    {NS_VK_PRINT, GDK_Print},
+-    {NS_VK_EXECUTE, GDK_Execute},
+-    {NS_VK_PRINTSCREEN, GDK_Print},
+-    {NS_VK_INSERT, GDK_Insert},
+-    {NS_VK_DELETE, GDK_Delete},
+-    {NS_VK_HELP, GDK_Help},
+-
+-    {NS_VK_NUM_LOCK, GDK_Num_Lock},
+-    {NS_VK_SCROLL_LOCK, GDK_Scroll_Lock},
+-
+-    // Function keys
+-    {NS_VK_F1, GDK_F1},
+-    {NS_VK_F2, GDK_F2},
+-    {NS_VK_F3, GDK_F3},
+-    {NS_VK_F4, GDK_F4},
+-    {NS_VK_F5, GDK_F5},
+-    {NS_VK_F6, GDK_F6},
+-    {NS_VK_F7, GDK_F7},
+-    {NS_VK_F8, GDK_F8},
+-    {NS_VK_F9, GDK_F9},
+-    {NS_VK_F10, GDK_F10},
+-    {NS_VK_F11, GDK_F11},
+-    {NS_VK_F12, GDK_F12},
+-    {NS_VK_F13, GDK_F13},
+-    {NS_VK_F14, GDK_F14},
+-    {NS_VK_F15, GDK_F15},
+-    {NS_VK_F16, GDK_F16},
+-    {NS_VK_F17, GDK_F17},
+-    {NS_VK_F18, GDK_F18},
+-    {NS_VK_F19, GDK_F19},
+-    {NS_VK_F20, GDK_F20},
+-    {NS_VK_F21, GDK_F21},
+-    {NS_VK_F22, GDK_F22},
+-    {NS_VK_F23, GDK_F23},
+-    {NS_VK_F24, GDK_F24},
+-
+-    // context menu key, keysym 0xff67, typically keycode 117 on 105-key
+-    // (Microsoft) x86 keyboards, located between right 'Windows' key and right
+-    // Ctrl key
+-    {NS_VK_CONTEXT_MENU, GDK_Menu},
+-    {NS_VK_SLEEP, GDK_Sleep},
+-
+-    {NS_VK_ATTN, GDK_3270_Attn},
+-    {NS_VK_CRSEL, GDK_3270_CursorSelect},
+-    {NS_VK_EXSEL, GDK_3270_ExSelect},
+-    {NS_VK_EREOF, GDK_3270_EraseEOF},
+-    {NS_VK_PLAY, GDK_3270_Play},
+-    //{ NS_VK_ZOOM,       GDK_XXX },
+-    {NS_VK_PA1, GDK_3270_PA1},
+-
+-    {NS_VK_MULTIPLY, GDK_KP_Multiply},
+-    {NS_VK_ADD, GDK_KP_Add},
+-    {NS_VK_SEPARATOR, GDK_KP_Separator},
+-    {NS_VK_SUBTRACT, GDK_KP_Subtract},
+-    {NS_VK_DECIMAL, GDK_KP_Decimal},
+-    {NS_VK_DIVIDE, GDK_KP_Divide},
+-    {NS_VK_NUMPAD0, GDK_KP_0},
+-    {NS_VK_NUMPAD1, GDK_KP_1},
+-    {NS_VK_NUMPAD2, GDK_KP_2},
+-    {NS_VK_NUMPAD3, GDK_KP_3},
+-    {NS_VK_NUMPAD4, GDK_KP_4},
+-    {NS_VK_NUMPAD5, GDK_KP_5},
+-    {NS_VK_NUMPAD6, GDK_KP_6},
+-    {NS_VK_NUMPAD7, GDK_KP_7},
+-    {NS_VK_NUMPAD8, GDK_KP_8},
+-    {NS_VK_NUMPAD9, GDK_KP_9},
+-    {NS_VK_SPACE, GDK_space},
+-    {NS_VK_COLON, GDK_colon},
+-    {NS_VK_SEMICOLON, GDK_semicolon},
+-    {NS_VK_LESS_THAN, GDK_less},
+-    {NS_VK_EQUALS, GDK_equal},
+-    {NS_VK_GREATER_THAN, GDK_greater},
+-    {NS_VK_QUESTION_MARK, GDK_question},
+-    {NS_VK_AT, GDK_at},
+-    {NS_VK_CIRCUMFLEX, GDK_asciicircum},
+-    {NS_VK_EXCLAMATION, GDK_exclam},
+-    {NS_VK_DOUBLE_QUOTE, GDK_quotedbl},
+-    {NS_VK_HASH, GDK_numbersign},
+-    {NS_VK_DOLLAR, GDK_dollar},
+-    {NS_VK_PERCENT, GDK_percent},
+-    {NS_VK_AMPERSAND, GDK_ampersand},
+-    {NS_VK_UNDERSCORE, GDK_underscore},
+-    {NS_VK_OPEN_PAREN, GDK_parenleft},
+-    {NS_VK_CLOSE_PAREN, GDK_parenright},
+-    {NS_VK_ASTERISK, GDK_asterisk},
+-    {NS_VK_PLUS, GDK_plus},
+-    {NS_VK_PIPE, GDK_bar},
+-    {NS_VK_HYPHEN_MINUS, GDK_minus},
+-    {NS_VK_OPEN_CURLY_BRACKET, GDK_braceleft},
+-    {NS_VK_CLOSE_CURLY_BRACKET, GDK_braceright},
+-    {NS_VK_TILDE, GDK_asciitilde},
+-    {NS_VK_COMMA, GDK_comma},
+-    {NS_VK_PERIOD, GDK_period},
+-    {NS_VK_SLASH, GDK_slash},
+-    {NS_VK_BACK_QUOTE, GDK_grave},
+-    {NS_VK_OPEN_BRACKET, GDK_bracketleft},
+-    {NS_VK_BACK_SLASH, GDK_backslash},
+-    {NS_VK_CLOSE_BRACKET, GDK_bracketright},
+-    {NS_VK_QUOTE, GDK_apostrophe},
+-};
+-
+-/* static */
+-guint KeymapWrapper::ConvertGeckoKeyCodeToGDKKeyval(const nsAString& aKeyCode) {
+-  NS_ConvertUTF16toUTF8 keyName(aKeyCode);
+-  ToUpperCase(keyName);  // We want case-insensitive comparison with data
+-                         // stored as uppercase.
+-
+-  uint32_t keyCode = 0;
+-
+-  uint32_t keyNameLength = keyName.Length();
+-  const char* keyNameStr = keyName.get();
+-  for (const auto& code : gKeyCodes) {
+-    if (keyNameLength == code.strlength &&
+-        !nsCRT::strcmp(code.str, keyNameStr)) {
+-      keyCode = code.keycode;
+-      break;
+-    }
+-  }
+-
+-  // First, try to handle alphanumeric input, not listed in nsKeycodes:
+-  // most likely, more letters will be getting typed in than things in
+-  // the key list, so we will look through these first.
+-
+-  if (keyCode >= NS_VK_A && keyCode <= NS_VK_Z) {
+-    // gdk and DOM both use the ASCII codes for these keys.
+-    return keyCode;
+-  }
+-
+-  // numbers
+-  if (keyCode >= NS_VK_0 && keyCode <= NS_VK_9) {
+-    // gdk and DOM both use the ASCII codes for these keys.
+-    return keyCode - NS_VK_0 + GDK_0;
+-  }
+-
+-  // misc other things
+-  for (const auto& pair : gKeyPairs) {
+-    if (pair.DOMKeyCode == keyCode) {
+-      return pair.GDKKeyval;
+-    }
+-  }
+-
+-  return 0;
+-}
+-
+ /* static */
+ uint32_t KeymapWrapper::GetDOMKeyCodeFromKeyPairs(guint aGdkKeyval) {
+   switch (aGdkKeyval) {
+--- b/widget/gtk/nsGtkKeyUtils.h
++++ a/widget/gtk/nsGtkKeyUtils.h
+@@ -55,8 +55,6 @@
+    */
+   static CodeNameIndex ComputeDOMCodeNameIndex(const GdkEventKey* aGdkKeyEvent);
+ 
+-  static guint ConvertGeckoKeyCodeToGDKKeyval(const nsAString& aKeyCode);
+-
+   /**
+    * We need to translate modifiers masks from Gdk to Gecko.
+    * MappedModifier is a table of mapped modifiers, we ignore other
+--- b/widget/gtk/nsWaylandDisplay.cpp
++++ a/widget/gtk/nsWaylandDisplay.cpp
+@@ -93,11 +93,6 @@
+   mXdgActivation = aXdgActivation;
+ }
+ 
+-void nsWaylandDisplay::SetXdgDbusAnnotationManager(
+-    xdg_dbus_annotation_manager_v1* aXdgDbusAnnotationManager) {
+-  mXdgDbusAnnotationManager = aXdgDbusAnnotationManager;
+-}
+-
+ static void global_registry_handler(void* data, wl_registry* registry,
+                                     uint32_t id, const char* interface,
+                                     uint32_t version) {
+@@ -145,11 +140,6 @@
+     auto* activation = WaylandRegistryBind<xdg_activation_v1>(
+         registry, id, &xdg_activation_v1_interface, 1);
+     display->SetXdgActivation(activation);
+-  } else if (iface.EqualsLiteral("xdg_dbus_annotation_manager_v1")) {
+-    auto* annotationManager =
+-        WaylandRegistryBind<xdg_dbus_annotation_manager_v1>(
+-            registry, id, &xdg_dbus_annotation_manager_v1_interface, 1);
+-    display->SetXdgDbusAnnotationManager(annotationManager);
+   } else if (iface.EqualsLiteral("wl_seat")) {
+     // Install keyboard handlers for main thread only
+     auto* seat =
+--- b/widget/gtk/nsWaylandDisplay.h
++++ a/widget/gtk/nsWaylandDisplay.h
+@@ -19,7 +19,6 @@
+ #include "mozilla/widget/linux-dmabuf-unstable-v1-client-protocol.h"
+ #include "mozilla/widget/viewporter-client-protocol.h"
+ #include "mozilla/widget/xdg-activation-v1-client-protocol.h"
+-#include "mozilla/widget/xdg-dbus-annotation-v1-client-protocol.h"
+ #include "mozilla/widget/xdg-output-unstable-v1-client-protocol.h"
+ 
+ namespace mozilla::widget {
+@@ -49,9 +48,6 @@
+   }
+   zwp_linux_dmabuf_v1* GetDmabuf() { return mDmabuf; };
+   xdg_activation_v1* GetXdgActivation() { return mXdgActivation; };
+-  xdg_dbus_annotation_manager_v1* GetXdgDbusAnnotationManager() {
+-    return mXdgDbusAnnotationManager;
+-  }
+   wp_fractional_scale_manager_v1* GetFractionalScaleManager() {
+     return mFractionalScaleManager;
+   }
+@@ -68,8 +64,6 @@
+   void SetPointerConstraints(zwp_pointer_constraints_v1* aPointerConstraints);
+   void SetDmabuf(zwp_linux_dmabuf_v1* aDmabuf);
+   void SetXdgActivation(xdg_activation_v1* aXdgActivation);
+-  void SetXdgDbusAnnotationManager(
+-      xdg_dbus_annotation_manager_v1* aXdgDbusAnnotationManager);
+   void SetFractionalScaleManager(wp_fractional_scale_manager_v1* aManager) {
+     mFractionalScaleManager = aManager;
+   }
+@@ -90,7 +84,6 @@
+   wp_viewporter* mViewporter = nullptr;
+   zwp_linux_dmabuf_v1* mDmabuf = nullptr;
+   xdg_activation_v1* mXdgActivation = nullptr;
+-  xdg_dbus_annotation_manager_v1* mXdgDbusAnnotationManager = nullptr;
+   wp_fractional_scale_manager_v1* mFractionalScaleManager = nullptr;
+   bool mExplicitSync = false;
+   bool mIsPrimarySelectionEnabled = false;
+--- b/widget/gtk/nsWindow.cpp
++++ a/widget/gtk/nsWindow.cpp
+@@ -100,7 +100,6 @@
+ #include "ScreenHelperGTK.h"
+ #include "SystemTimeConverter.h"
+ #include "WidgetUtilsGtk.h"
+-#include "NativeMenuGtk.h"
+ 
+ #ifdef ACCESSIBILITY
+ #  include "mozilla/a11y/LocalAccessible.h"
+@@ -6988,11 +6987,6 @@
+   }
+ }
+ 
+-void nsWindow::SetDBusMenuBar(
+-    RefPtr<mozilla::widget::DBusMenuBar> aDbusMenuBar) {
+-  mDBusMenuBar = std::move(aDbusMenuBar);
+-}
+-
+ LayoutDeviceIntCoord nsWindow::GetTitlebarRadius() {
+   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+   int32_t cssCoord = LookAndFeel::GetInt(LookAndFeel::IntID::TitlebarRadius);
+--- b/widget/gtk/nsWindow.h
++++ a/widget/gtk/nsWindow.h
+@@ -113,7 +113,6 @@
+ #endif
+ 
+ namespace widget {
+-class DBusMenuBar;
+ class Screen;
+ }  // namespace widget
+ }  // namespace mozilla
+@@ -374,8 +373,6 @@
+   void UpdateWindowDraggingRegion(
+       const LayoutDeviceIntRegion& aRegion) override;
+ 
+-  void SetDBusMenuBar(RefPtr<mozilla::widget::DBusMenuBar> aDbusMenuBar);
+-
+   // HiDPI scale conversion
+   gint GdkCeiledScaleFactor();
+   double FractionalScaleFactor();
+@@ -908,8 +905,6 @@
+   RefPtr<nsWindow> mWaylandPopupNext;
+   RefPtr<nsWindow> mWaylandPopupPrev;
+ 
+-  RefPtr<mozilla::widget::DBusMenuBar> mDBusMenuBar;
+-
+   // When popup is resized by Gtk by move-to-rect callback,
+   // we store final popup size here. Then we use mMoveToRectPopupSize size
+   // in following popup operations unless mLayoutPopupSizeCleared is set.
+--- b/widget/gtk/wayland/moz.build
++++ a/widget/gtk/wayland/moz.build
+@@ -15,7 +15,6 @@
+     "relative-pointer-unstable-v1-protocol.c",
+     "viewporter-protocol.c",
+     "xdg-activation-v1-protocol.c",
+-    "xdg-dbus-annotation-v1-protocol.c",
+     "xdg-output-unstable-v1-protocol.c",
+ ]
+ 
+@@ -27,7 +26,6 @@
+     "relative-pointer-unstable-v1-client-protocol.h",
+     "viewporter-client-protocol.h",
+     "xdg-activation-v1-client-protocol.h",
+-    "xdg-dbus-annotation-v1-client-protocol.h",
+     "xdg-output-unstable-v1-client-protocol.h",
+ ]
+ 
+--- b/widget/gtk/wayland/xdg-dbus-annotation-v1-client-protocol.h
++++ /dev/null
+@@ -1,284 +0,0 @@
+-/* Generated by wayland-scanner 1.19.0 */
+-
+-#ifndef XDG_DBUS_ANNOTATION_V1_CLIENT_PROTOCOL_H
+-#define XDG_DBUS_ANNOTATION_V1_CLIENT_PROTOCOL_H
+-
+-#include <stdint.h>
+-#include <stddef.h>
+-#include "wayland-client.h"
+-
+-#ifdef __cplusplus
+-extern "C" {
+-#endif
+-
+-/**
+- * @page page_xdg_dbus_annotation_v1 The xdg_dbus_annotation_v1 protocol
+- * Wayland protocol for associating DBus objects with toplevels
+- *
+- * @section page_desc_xdg_dbus_annotation_v1 Description
+- *
+- * This description provides a high-level overview of the interplay between
+- * the interfaces defined in this protocol. For details, see the protocol
+- * specification.
+- *
+- * The dbus_annotation_manager allows a client to request the creation of an
+- * annotation object associated with an wl_surface or itself. The annotation
+- * object allows a client to notify the compositor of a DBus object associated
+- * with itself.
+- *
+- * Clients should request the creation of an dbus_annotation object when they
+- * create a DBus object associated with an wl_surface or themselves, and should
+- * release the object when they destroy a DBus object associated with their
+- * wl_surface or themselves.
+- *
+- * Clients should only own at most one dbus_annotation object with a given name
+- * for each of their wl_surface objects or themselves. A protocol error will be
+- * raised if a client requests more than one dbus_annotation object for an
+- * wl_surface or themselves with a given name.
+- *
+- * @section page_ifaces_xdg_dbus_annotation_v1 Interfaces
+- * - @subpage page_iface_xdg_dbus_annotation_manager_v1 - controller object for
+- * registering dbus objects associated with wl_surfaces or clients
+- * - @subpage page_iface_xdg_dbus_annotation_v1 - controller object for
+- * associating dbus objects with an wl_surface
+- * @section page_copyright_xdg_dbus_annotation_v1 Copyright
+- * <pre>
+- *
+- * Copyright © 2017 David Edmundson
+- * Copyrihgt © 2023 Janet Blackquill
+- *
+- * Permission is hereby granted, free of charge, to any person obtaining a
+- * copy of this software and associated documentation files (the "Software"),
+- * to deal in the Software without restriction, including without limitation
+- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+- * and/or sell copies of the Software, and to permit persons to whom the
+- * Software is furnished to do so, subject to the following conditions:
+- *
+- * The above copyright notice and this permission notice (including the next
+- * paragraph) shall be included in all copies or substantial portions of the
+- * Software.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+- * DEALINGS IN THE SOFTWARE.
+- * </pre>
+- */
+-struct wl_surface;
+-struct xdg_dbus_annotation_manager_v1;
+-struct xdg_dbus_annotation_v1;
+-
+-#ifndef XDG_DBUS_ANNOTATION_MANAGER_V1_INTERFACE
+-#  define XDG_DBUS_ANNOTATION_MANAGER_V1_INTERFACE
+-/**
+- * @page page_iface_xdg_dbus_annotation_manager_v1
+- * xdg_dbus_annotation_manager_v1
+- * @section page_iface_xdg_dbus_annotation_manager_v1_desc Description
+- *
+- * An object that provides access to the creation of dbus_annotation objects.
+- * @section page_iface_xdg_dbus_annotation_manager_v1_api API
+- * See @ref iface_xdg_dbus_annotation_manager_v1.
+- */
+-/**
+- * @defgroup iface_xdg_dbus_annotation_manager_v1 The
+- * xdg_dbus_annotation_manager_v1 interface
+- *
+- * An object that provides access to the creation of dbus_annotation objects.
+- */
+-extern const struct wl_interface xdg_dbus_annotation_manager_v1_interface;
+-#endif
+-#ifndef XDG_DBUS_ANNOTATION_V1_INTERFACE
+-#  define XDG_DBUS_ANNOTATION_V1_INTERFACE
+-/**
+- * @page page_iface_xdg_dbus_annotation_v1 xdg_dbus_annotation_v1
+- * @section page_iface_xdg_dbus_annotation_v1_desc Description
+- *
+- * An object that provides access to clients to notify the compositor of
+- * associated DBus objects for an wl_surface.
+- *
+- * If not applicable, clients should remove this object.
+- * @section page_iface_xdg_dbus_annotation_v1_api API
+- * See @ref iface_xdg_dbus_annotation_v1.
+- */
+-/**
+- * @defgroup iface_xdg_dbus_annotation_v1 The xdg_dbus_annotation_v1 interface
+- *
+- * An object that provides access to clients to notify the compositor of
+- * associated DBus objects for an wl_surface.
+- *
+- * If not applicable, clients should remove this object.
+- */
+-extern const struct wl_interface xdg_dbus_annotation_v1_interface;
+-#endif
+-
+-#ifndef XDG_DBUS_ANNOTATION_MANAGER_V1_ERROR_ENUM
+-#  define XDG_DBUS_ANNOTATION_MANAGER_V1_ERROR_ENUM
+-enum xdg_dbus_annotation_manager_v1_error {
+-  /**
+-   * given wl_surface or client already has a dbus_annotation with the same
+-   * interface
+-   */
+-  XDG_DBUS_ANNOTATION_MANAGER_V1_ERROR_ALREADY_ANNOTATED = 0,
+-  /**
+-   * given wl_surface is invalid
+-   */
+-  XDG_DBUS_ANNOTATION_MANAGER_V1_ERROR_BAD_TARGET = 1,
+-};
+-#endif /* XDG_DBUS_ANNOTATION_MANAGER_V1_ERROR_ENUM */
+-
+-#define XDG_DBUS_ANNOTATION_MANAGER_V1_DESTROY 0
+-#define XDG_DBUS_ANNOTATION_MANAGER_V1_CREATE_CLIENT 1
+-#define XDG_DBUS_ANNOTATION_MANAGER_V1_CREATE_SURFACE 2
+-
+-/**
+- * @ingroup iface_xdg_dbus_annotation_manager_v1
+- */
+-#define XDG_DBUS_ANNOTATION_MANAGER_V1_DESTROY_SINCE_VERSION 1
+-/**
+- * @ingroup iface_xdg_dbus_annotation_manager_v1
+- */
+-#define XDG_DBUS_ANNOTATION_MANAGER_V1_CREATE_CLIENT_SINCE_VERSION 1
+-/**
+- * @ingroup iface_xdg_dbus_annotation_manager_v1
+- */
+-#define XDG_DBUS_ANNOTATION_MANAGER_V1_CREATE_SURFACE_SINCE_VERSION 1
+-
+-/** @ingroup iface_xdg_dbus_annotation_manager_v1 */
+-static inline void xdg_dbus_annotation_manager_v1_set_user_data(
+-    struct xdg_dbus_annotation_manager_v1* xdg_dbus_annotation_manager_v1,
+-    void* user_data) {
+-  wl_proxy_set_user_data((struct wl_proxy*)xdg_dbus_annotation_manager_v1,
+-                         user_data);
+-}
+-
+-/** @ingroup iface_xdg_dbus_annotation_manager_v1 */
+-static inline void* xdg_dbus_annotation_manager_v1_get_user_data(
+-    struct xdg_dbus_annotation_manager_v1* xdg_dbus_annotation_manager_v1) {
+-  return wl_proxy_get_user_data(
+-      (struct wl_proxy*)xdg_dbus_annotation_manager_v1);
+-}
+-
+-static inline uint32_t xdg_dbus_annotation_manager_v1_get_version(
+-    struct xdg_dbus_annotation_manager_v1* xdg_dbus_annotation_manager_v1) {
+-  return wl_proxy_get_version((struct wl_proxy*)xdg_dbus_annotation_manager_v1);
+-}
+-
+-/**
+- * @ingroup iface_xdg_dbus_annotation_manager_v1
+- *
+- * Destroy the xdg_dbus_annotation_manager object. xdg_dbus_annotation objects
+- * created from this object remain valid and should be destroyed separately.
+- */
+-static inline void xdg_dbus_annotation_manager_v1_destroy(
+-    struct xdg_dbus_annotation_manager_v1* xdg_dbus_annotation_manager_v1) {
+-  wl_proxy_marshal((struct wl_proxy*)xdg_dbus_annotation_manager_v1,
+-                   XDG_DBUS_ANNOTATION_MANAGER_V1_DESTROY);
+-
+-  wl_proxy_destroy((struct wl_proxy*)xdg_dbus_annotation_manager_v1);
+-}
+-
+-/**
+- * @ingroup iface_xdg_dbus_annotation_manager_v1
+- *
+- * The interface other DBus clients can expect the object specified by the
+- * annotation to implement.
+- */
+-static inline struct xdg_dbus_annotation_v1*
+-xdg_dbus_annotation_manager_v1_create_client(
+-    struct xdg_dbus_annotation_manager_v1* xdg_dbus_annotation_manager_v1,
+-    const char* interface) {
+-  struct wl_proxy* id;
+-
+-  id = wl_proxy_marshal_constructor(
+-      (struct wl_proxy*)xdg_dbus_annotation_manager_v1,
+-      XDG_DBUS_ANNOTATION_MANAGER_V1_CREATE_CLIENT,
+-      &xdg_dbus_annotation_v1_interface, interface, NULL);
+-
+-  return (struct xdg_dbus_annotation_v1*)id;
+-}
+-
+-/**
+- * @ingroup iface_xdg_dbus_annotation_manager_v1
+- *
+- * The surface to associate the annotation with
+- */
+-static inline struct xdg_dbus_annotation_v1*
+-xdg_dbus_annotation_manager_v1_create_surface(
+-    struct xdg_dbus_annotation_manager_v1* xdg_dbus_annotation_manager_v1,
+-    const char* interface, struct wl_surface* toplevel) {
+-  struct wl_proxy* id;
+-
+-  id = wl_proxy_marshal_constructor(
+-      (struct wl_proxy*)xdg_dbus_annotation_manager_v1,
+-      XDG_DBUS_ANNOTATION_MANAGER_V1_CREATE_SURFACE,
+-      &xdg_dbus_annotation_v1_interface, interface, NULL, toplevel);
+-
+-  return (struct xdg_dbus_annotation_v1*)id;
+-}
+-
+-#define XDG_DBUS_ANNOTATION_V1_DESTROY 0
+-#define XDG_DBUS_ANNOTATION_V1_SET_ADDRESS 1
+-
+-/**
+- * @ingroup iface_xdg_dbus_annotation_v1
+- */
+-#define XDG_DBUS_ANNOTATION_V1_DESTROY_SINCE_VERSION 1
+-/**
+- * @ingroup iface_xdg_dbus_annotation_v1
+- */
+-#define XDG_DBUS_ANNOTATION_V1_SET_ADDRESS_SINCE_VERSION 1
+-
+-/** @ingroup iface_xdg_dbus_annotation_v1 */
+-static inline void xdg_dbus_annotation_v1_set_user_data(
+-    struct xdg_dbus_annotation_v1* xdg_dbus_annotation_v1, void* user_data) {
+-  wl_proxy_set_user_data((struct wl_proxy*)xdg_dbus_annotation_v1, user_data);
+-}
+-
+-/** @ingroup iface_xdg_dbus_annotation_v1 */
+-static inline void* xdg_dbus_annotation_v1_get_user_data(
+-    struct xdg_dbus_annotation_v1* xdg_dbus_annotation_v1) {
+-  return wl_proxy_get_user_data((struct wl_proxy*)xdg_dbus_annotation_v1);
+-}
+-
+-static inline uint32_t xdg_dbus_annotation_v1_get_version(
+-    struct xdg_dbus_annotation_v1* xdg_dbus_annotation_v1) {
+-  return wl_proxy_get_version((struct wl_proxy*)xdg_dbus_annotation_v1);
+-}
+-
+-/**
+- * @ingroup iface_xdg_dbus_annotation_v1
+- */
+-static inline void xdg_dbus_annotation_v1_destroy(
+-    struct xdg_dbus_annotation_v1* xdg_dbus_annotation_v1) {
+-  wl_proxy_marshal((struct wl_proxy*)xdg_dbus_annotation_v1,
+-                   XDG_DBUS_ANNOTATION_V1_DESTROY);
+-
+-  wl_proxy_destroy((struct wl_proxy*)xdg_dbus_annotation_v1);
+-}
+-
+-/**
+- * @ingroup iface_xdg_dbus_annotation_v1
+- *
+- * Set or update the service name and object path corresponding to the
+- * DBus object. The DBus object should be registered on the session bus
+- * before sending this request.
+- *
+- * Strings should be formatted in Latin-1 matching the relevant DBus
+- * specifications.
+- */
+-static inline void xdg_dbus_annotation_v1_set_address(
+-    struct xdg_dbus_annotation_v1* xdg_dbus_annotation_v1,
+-    const char* service_name, const char* object_path) {
+-  wl_proxy_marshal((struct wl_proxy*)xdg_dbus_annotation_v1,
+-                   XDG_DBUS_ANNOTATION_V1_SET_ADDRESS, service_name,
+-                   object_path);
+-}
+-
+-#ifdef __cplusplus
+-}
+-#endif
+-
+-#endif
+--- b/widget/gtk/wayland/xdg-dbus-annotation-v1-protocol.c
++++ /dev/null
+@@ -1,75 +0,0 @@
+-/* Generated by wayland-scanner 1.19.0 */
+-
+-/*
+- * Copyright © 2017 David Edmundson
+- * Copyrihgt © 2023 Janet Blackquill
+- *
+- * Permission is hereby granted, free of charge, to any person obtaining a
+- * copy of this software and associated documentation files (the "Software"),
+- * to deal in the Software without restriction, including without limitation
+- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+- * and/or sell copies of the Software, and to permit persons to whom the
+- * Software is furnished to do so, subject to the following conditions:
+- *
+- * The above copyright notice and this permission notice (including the next
+- * paragraph) shall be included in all copies or substantial portions of the
+- * Software.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+- * DEALINGS IN THE SOFTWARE.
+- */
+-
+-#include <stdlib.h>
+-#include <stdint.h>
+-#include "wayland-util.h"
+-
+-#ifndef __has_attribute
+-#  define __has_attribute(x) 0 /* Compatibility with non-clang compilers. */
+-#endif
+-
+-#if (__has_attribute(visibility) || defined(__GNUC__) && __GNUC__ >= 4)
+-#  define WL_PRIVATE __attribute__((visibility("hidden")))
+-#else
+-#  define WL_PRIVATE
+-#endif
+-
+-#pragma GCC visibility push(default)
+-extern const struct wl_interface wl_surface_interface;
+-#pragma GCC visibility pop
+-extern const struct wl_interface xdg_dbus_annotation_v1_interface;
+-
+-static const struct wl_interface* xdg_dbus_annotation_v1_types[] = {
+-    NULL,
+-    NULL,
+-    NULL,
+-    &xdg_dbus_annotation_v1_interface,
+-    NULL,
+-    &xdg_dbus_annotation_v1_interface,
+-    &wl_surface_interface,
+-};
+-
+-static const struct wl_message xdg_dbus_annotation_manager_v1_requests[] = {
+-    {"destroy", "", xdg_dbus_annotation_v1_types + 0},
+-    {"create_client", "sn", xdg_dbus_annotation_v1_types + 2},
+-    {"create_surface", "sno", xdg_dbus_annotation_v1_types + 4},
+-};
+-
+-WL_PRIVATE const struct wl_interface xdg_dbus_annotation_manager_v1_interface =
+-    {
+-        "xdg_dbus_annotation_manager_v1",        1, 3,
+-        xdg_dbus_annotation_manager_v1_requests, 0, NULL,
+-};
+-
+-static const struct wl_message xdg_dbus_annotation_v1_requests[] = {
+-    {"destroy", "", xdg_dbus_annotation_v1_types + 0},
+-    {"set_address", "ss", xdg_dbus_annotation_v1_types + 0},
+-};
+-
+-WL_PRIVATE const struct wl_interface xdg_dbus_annotation_v1_interface = {
+-    "xdg_dbus_annotation_v1", 1, 2, xdg_dbus_annotation_v1_requests, 0, NULL,
+-};
+--- b/xpfe/appshell/AppWindow.cpp
++++ a/xpfe/appshell/AppWindow.cpp
+@@ -78,7 +78,7 @@
+ 
+ #include "mozilla/dom/DocumentL10n.h"
+ 
++#ifdef XP_MACOSX
+-#if defined(XP_MACOSX) || defined(MOZ_WIDGET_GTK)
+ #  include "mozilla/widget/NativeMenuSupport.h"
+ #  define USE_NATIVE_MENUS
+ #endif
+@@ -491,10 +491,10 @@
+ 
+ #ifdef USE_NATIVE_MENUS
+   if (!gfxPlatform::IsHeadless()) {
++    // macOS only: For modals created early in startup.
++    // (e.g. ProfileManager/ProfileDowngrade) this creates a fallback menu for
++    // the menu bar which only contains a "Quit" menu item.
++    // This allows the user to quit the application in a regular way with cmd+Q.
+-    // On macOS, for modals created early in startup. (e.g.
+-    // ProfileManager/ProfileDowngrade) this creates a fallback menu for the
+-    // menu bar which only contains a "Quit" menu item. This allows the user to
+-    // quit the application in a regular way with cmd+Q.
+     widget::NativeMenuSupport::CreateNativeMenuBar(mWindow, nullptr);
+   }
+ #endif
+@@ -3140,15 +3140,22 @@
+   // Find the menubar tag (if there is more than one, we ignore all but
+   // the first).
+   nsCOMPtr<nsINodeList> menubarElements = aDoc->GetElementsByTagNameNS(
++      nsLiteralString(
++          u"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"),
+-      u"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"_ns,
+       u"menubar"_ns);
+ 
++  nsCOMPtr<nsINode> menubarNode;
+-  RefPtr<Element> menubar;
+   if (menubarElements) {
++    menubarNode = menubarElements->Item(0);
+-    menubar = Element::FromNodeOrNull(menubarElements->Item(0));
+   }
+ 
++  using widget::NativeMenuSupport;
++  if (menubarNode) {
++    nsCOMPtr<Element> menubarContent(do_QueryInterface(menubarNode));
++    NativeMenuSupport::CreateNativeMenuBar(aParentWindow, menubarContent);
++  } else {
++    NativeMenuSupport::CreateNativeMenuBar(aParentWindow, nullptr);
++  }
+-  widget::NativeMenuSupport::CreateNativeMenuBar(aParentWindow, menubar);
+ 
+   if (!sHiddenWindowLoadedNativeMenus) {
+     sHiddenWindowLoadedNativeMenus = true;
+@@ -3190,11 +3197,13 @@
+ NS_IMPL_ISUPPORTS0(L10nReadyPromiseHandler)
+ 
+ static void BeginLoadNativeMenus(Document* aDoc, nsIWidget* aParentWindow) {
++  RefPtr<DocumentL10n> l10n = aDoc->GetL10n();
++  if (l10n) {
+-  if (RefPtr<DocumentL10n> l10n = aDoc->GetL10n()) {
+     // Wait for l10n to be ready so the menus are localized.
+     RefPtr<Promise> promise = l10n->Ready();
+     MOZ_ASSERT(promise);
++    RefPtr<L10nReadyPromiseHandler> handler =
++        new L10nReadyPromiseHandler(aDoc, aParentWindow);
+-    RefPtr handler = new L10nReadyPromiseHandler(aDoc, aParentWindow);
+     promise->AppendNativeHandler(handler);
+   } else {
+     // Something went wrong loading the doc and l10n wasn't created. This

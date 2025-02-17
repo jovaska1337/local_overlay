@@ -1,0 +1,12 @@
+{
+    "schema": 1719499481119,
+    "imageSize": 16,
+    "attachment": {
+        "hash": "d3edc8e1411cc7f7689045ff1202713ee6ecc2be5c82634fe03b362d42c68e02",
+        "size": 5430
+    },
+    "engineIdentifiers": [ "duckduckgo" ],
+    "filter_expression": "1 == 1",
+    "id": "00000001-0001-0001-0001-000000000001",
+    "last_modified": 1719504277655
+}

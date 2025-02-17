@@ -15,10 +15,16 @@ SLOT="0"
 KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~m68k ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~arm64-macos ~x64-macos"
 IUSE=""
 
-# utilize same source as IceCat to avoid re-download
-SRC_URI="
-	https://archive.mozilla.org/pub/firefox/candidates/${PV}esr-candidates/build${PR:1}/source/firefox-${PV}esr.source.tar.xz -> firefox-${PV}-${PR:1}esr.source.tar.xz
-"
+# from firefox.ebuild
+MOZ_PV=${PV}esr
+MOZ_PN=firefox
+MOZ_P="${MOZ_PN}-${MOZ_PV}"
+MOZ_PV_DISTFILES="${MOZ_PV}${MOZ_PV_SUFFIX}"
+MOZ_P_DISTFILES="${MOZ_PN}-${MOZ_PV_DISTFILES}"
+MOZ_SRC_BASE_URI="https://archive.mozilla.org/pub/${MOZ_PN}/releases/${MOZ_PV}"
+
+# utilize same sources as firefox ebuilds to avoid re-download
+SRC_URI="${MOZ_SRC_BASE_URI}/source/${MOZ_P}.source.tar.xz -> ${MOZ_P_DISTFILES}.source.tar.xz"
 
 RDEPEND="
 	dev-python/six

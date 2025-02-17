@@ -14,7 +14,7 @@
 			"name": "Google",
 			"search_url": "https://www.google.com/search",
 			"search_form": "https://www.google.com/search",
-			"search_url_get_params": "q={searchTerms}",
+			"search_url_get_params": "q={searchTerms}&udm=14&tbs=li:1",
 			"suggest_url": "https://www.google.com/complete/search",
 			"suggest_url_get_params": "q={searchTerms}"
 		}

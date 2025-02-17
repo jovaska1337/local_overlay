@@ -1,0 +1,154 @@
+--- b/widget/gtk/NativeMenuGtk.cpp
++++ a/widget/gtk/NativeMenuGtk.cpp
+@@ -444,8 +444,6 @@
+   // TODO: For testing mostly.
+ }
+ 
+-#ifdef MOZ_ENABLE_DBUS
+-
+ class MenubarModelDBus final : public MenuModel {
+  public:
+   explicit MenubarModelDBus(dom::Element* aElement) : MenuModel(aElement) {
+@@ -519,7 +517,7 @@
+   return ParseKey(key, keycode);
+ }
+ 
++// TODO(emilio): Unifiy with nsMenuUtilsX::GeckoModifiersForNodeAttribute (or
+-// TODO(emilio): Unify with nsMenuUtilsX::GeckoModifiersForNodeAttribute (or
+ // at least switch to strtok_r).
+ static uint32_t ParseModifiers(const nsAString& aModifiers) {
+   if (aModifiers.IsEmpty()) {
+@@ -732,7 +730,7 @@
+     return;
+   }
+ 
++#ifdef MOZ_WAYLAND
+-#  ifdef MOZ_WAYLAND
+   if (auto* display = widget::WaylandDisplayGet()) {
+     xdg_dbus_annotation_manager_v1* annotationManager =
+         display->GetXdgDbusAnnotationManager();
+@@ -759,8 +757,8 @@
+                                        mObjectPath.get());
+     return;
+   }
++#endif
++#ifdef MOZ_X11
+-#  endif
+-#  ifdef MOZ_X11
+   // legacy path
+   auto xid = GDK_WINDOW_XID(gdkWin);
+   widget::DBusProxyCall(mProxy, "RegisterWindow",
+@@ -776,7 +774,7 @@
+                        aError->message);
+             self->mMenuModel->Element()->SetBoolAttr(nsGkAtoms::hidden, false);
+           });
++#endif
+-#  endif
+ }
+ 
+ static unsigned sID = 0;
+@@ -814,6 +812,5 @@
+ }
+ 
+ DBusMenuBar::~DBusMenuBar() = default;
+-#endif
+ 
+ }  // namespace mozilla::widget
+--- b/widget/gtk/NativeMenuGtk.h
++++ a/widget/gtk/NativeMenuGtk.h
+@@ -61,8 +61,6 @@
+   nsTArray<NativeMenu::Observer*> mObservers;
+ };
+ 
+-#ifdef MOZ_ENABLE_DBUS
+-
+ class DBusMenuBar final : public RefCounted<DBusMenuBar> {
+  public:
+   MOZ_DECLARE_REFCOUNTED_TYPENAME(DBusMenuBar)
+@@ -79,13 +77,11 @@
+   RefPtr<MenubarModelDBus> mMenuModel;
+   RefPtr<DbusmenuServer> mServer;
+   RefPtr<GDBusProxy> mProxy;
++#ifdef MOZ_WAYLAND
+-#  ifdef MOZ_WAYLAND
+   xdg_dbus_annotation_v1* mAnnotation = nullptr;
++#endif
+-#  endif
+ };
+ 
+-#endif
+-
+ }  // namespace widget
+ }  // namespace mozilla
+ 
+--- b/widget/gtk/NativeMenuSupport.cpp
++++ a/widget/gtk/NativeMenuSupport.cpp
+@@ -18,13 +18,11 @@
+   MOZ_RELEASE_ASSERT(NS_IsMainThread(),
+                      "Attempting to create native menu bar on wrong thread!");
+ 
+-#ifdef MOZ_ENABLE_DBUS
+   if (aMenuBarElement && StaticPrefs::widget_gtk_global_menu_enabled() &&
+       DBusMenuFunctions::Init()) {
+     static_cast<nsWindow*>(aParent)->SetDBusMenuBar(
+         DBusMenuBar::Create(aMenuBarElement));
+   }
+-#endif
+ }
+ 
+ already_AddRefed<NativeMenu> NativeMenuSupport::CreateNativeContextMenu(
+--- b/widget/gtk/moz.build
++++ a/widget/gtk/moz.build
+@@ -63,6 +63,7 @@
+     "AsyncGtkClipboardRequest.cpp",
+     "CompositorWidgetChild.cpp",
+     "CompositorWidgetParent.cpp",
++    "DBusMenu.cpp",
+     "DMABufLibWrapper.cpp",
+     "DMABufSurface.cpp",
+     "GfxInfo.cpp",
+@@ -173,7 +174,6 @@
+     ]
+     UNIFIED_SOURCES += [
+         "AsyncDBus.cpp",
+-        "DBusMenu.cpp",
+         "DBusService.cpp",
+     ]
+     CXXFLAGS += CONFIG["MOZ_DBUS_CFLAGS"]
+--- b/widget/gtk/nsWindow.cpp
++++ a/widget/gtk/nsWindow.cpp
+@@ -6984,12 +6984,10 @@
+   }
+ }
+ 
+-#ifdef MOZ_ENABLE_DBUS
+ void nsWindow::SetDBusMenuBar(
+     RefPtr<mozilla::widget::DBusMenuBar> aDbusMenuBar) {
+   mDBusMenuBar = std::move(aDbusMenuBar);
+ }
+-#endif
+ 
+ LayoutDeviceIntCoord nsWindow::GetTitlebarRadius() {
+   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+--- b/widget/gtk/nsWindow.h
++++ a/widget/gtk/nsWindow.h
+@@ -374,9 +374,7 @@
+   void UpdateWindowDraggingRegion(
+       const LayoutDeviceIntRegion& aRegion) override;
+ 
+-#ifdef MOZ_ENABLE_DBUS
+   void SetDBusMenuBar(RefPtr<mozilla::widget::DBusMenuBar> aDbusMenuBar);
+-#endif
+ 
+   // HiDPI scale conversion
+   gint GdkCeiledScaleFactor();
+@@ -910,9 +908,7 @@
+   RefPtr<nsWindow> mWaylandPopupNext;
+   RefPtr<nsWindow> mWaylandPopupPrev;
+ 
+-#ifdef MOZ_ENABLE_DBUS
+   RefPtr<mozilla::widget::DBusMenuBar> mDBusMenuBar;
+-#endif
+ 
+   // When popup is resized by Gtk by move-to-rect callback,
+   // we store final popup size here. Then we use mMoveToRectPopupSize size

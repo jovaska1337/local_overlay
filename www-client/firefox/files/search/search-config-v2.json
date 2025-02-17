@@ -1,0 +1,188 @@
+{
+    "data": [ {
+        "globalDefault": "duckduckgo",
+        "globalDefaultPrivate": "duckduckgo",
+        "recordType": "defaultEngines",
+	"specificDefaults": [{
+		"default": "duckduckgo",
+		"defaultPrivate": "duckduckgo",
+        	"environment": { "allRegionsAndLocales": true }
+	}]
+    }, {
+        "base": {
+            "classification": "general",
+            "name": "DuckDuckGo",
+            "urls": {
+                "search": {
+                    "base": "https://duckduckgo.com",
+                    "params": [],
+                    "searchTermParamName": "q"
+                },
+                "suggestions": {
+                    "base": "https://ac.duckduckgo.com/ac/",
+                    "params": [ { "name": "type", "value": "list" } ],
+                    "searchTermParamName": "q"
+                }
+            }
+        },
+        "identifier": "duckduckgo",
+        "recordType": "engine",
+        "variants": [{ "environment": { "allRegionsAndLocales": true } }]
+    }, {
+        "base": {
+            "classification": "general",
+            "name": "Google",
+            "urls": {
+                "search": {
+                    "base": "https://www.google.com/search",
+                    "params": [ {
+                        "name": "udm", "value": "14"
+                    }, {
+                        "name": "tbs", "value": "li:"
+                    } ],
+                    "searchTermParamName": "q"
+                },
+                "suggestions": {
+                    "base": "https://www.google.com/complete/search",
+                    "params": [ {
+                        "name": "client", "value": "firefox"
+                    }, {
+                        "name": "udm", "value": "14"
+                    }, {
+                        "name": "tbs", "value": "li:"
+                    } ],
+                    "searchTermParamName": "q"
+                }
+            }
+        },
+        "identifier": "google",
+        "recordType": "engine",
+        "variants": [{ "environment": { "allRegionsAndLocales": true } }]
+    }, {
+        "base": {
+            "classification": "general",
+            "name": "Bing",
+            "urls": {
+                "search": {
+                    "base": "https://www.bing.com/search",
+                    "params": [],
+                    "searchTermParamName": "q"
+                },
+                "suggestions": {
+                    "base": "https://www.bing.com/osjson.aspx",
+                    "params": [],
+                    "searchTermParamName": "query"
+                }
+            }
+        },
+        "identifier": "bing",
+        "recordType": "engine",
+        "variants": [{ "environment": { "allRegionsAndLocales": true } }]
+    }, {
+        "base": {
+            "classification": "general",
+            "name": "Yandex",
+            "urls": {
+                "search": {
+                    "base": "https://www.yandex.com/search",
+                    "params": [],
+                    "searchTermParamName": "text"
+                },
+                "suggestions": {
+                    "base": "https://suggest.yandex.com/suggest-ff.cgi",
+                    "params": [],
+                    "searchTermParamName": "part"
+                }
+            }
+        },
+        "identifier": "yandex",
+        "recordType": "engine",
+        "variants": [{ "environment": { "allRegionsAndLocales": true } }]
+    }, {
+        "base": {
+            "classification": "general",
+            "name": "Searx",
+            "urls": {
+                "search": {
+                    "base": "https://search.disroot.org/search",
+                    "params": [],
+                    "searchTermParamName": "q"
+                }
+            }
+        },
+        "identifier": "searx",
+        "recordType": "engine",
+        "variants": [{ "environment": { "allRegionsAndLocales": true } }]
+    }, {
+        "base": {
+            "classification": "general",
+            "name": "Internet Archive",
+            "urls": {
+                "search": {
+                    "base": "https://archive.org/search",
+                    "params": [],
+                    "searchTermParamName": "query"
+                }
+            }
+        },
+        "identifier": "internet_archive",
+        "recordType": "engine",
+        "variants": [{ "environment": { "allRegionsAndLocales": true } }]
+    }, {
+        "base": {
+            "classification": "general",
+            "name": "Wikipedia (English)",
+            "urls": {
+                "search": {
+                    "base": "https://en.wikipedia.org/wiki/Special:Search",
+                    "params": [],
+                    "searchTermParamName": "search"
+                },
+                "suggestions": {
+                    "base": "https://en.wikipedia.org/w/api.php",
+                    "params": [{ "name": "action", "value": "opensearch" }],
+                    "searchTermParamName": "search"
+                }
+            }
+        },
+        "identifier": "wikipedia_en",
+        "recordType": "engine",
+        "variants": [{ "environment": { "allRegionsAndLocales": true } }]
+    }, {
+        "base": {
+            "classification": "general",
+            "name": "Wikipedia (Suomi)",
+            "urls": {
+                "search": {
+                    "base": "https://fi.wikipedia.org/wiki/Special:Search",
+                    "params": [],
+                    "searchTermParamName": "search"
+                },
+                "suggestions": {
+                    "base": "https://fi.wikipedia.org/w/api.php",
+                    "params": [{ "name": "action", "value": "opensearch" }],
+                    "searchTermParamName": "search"
+                }
+            }
+        },
+        "identifier": "wikipedia_fi",
+        "recordType": "engine",
+        "variants": [{ "environment": { "allRegionsAndLocales": true } }]
+    }, {
+        "orders": [{
+            "environment": { "allRegionsAndLocales": true },
+            "order": [
+                "duckduckgo",
+                "google",
+                "bing",
+                "yandex",
+                "searx",
+                "internet_archive",
+                "wikipedia_en",
+                "wikipedia_fi"
+            ]
+        }],
+        "recordType": "engineOrders"
+    } ],
+    "timestamp": 1739716917
+}
