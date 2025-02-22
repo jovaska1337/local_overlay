@@ -55,13 +55,11 @@ DEPEND="
 "
 RDEPEND="${DEPEND}"
 
-# FIXME: renaming processcore should be done to avoid conflict with libksysguard!
-# currently the source is configured to not install the in-tree version which may break!
 PATCHES=(
-	# remove when this gets merged
 	"${FILESDIR}/00-fix-plugins.patch"
-	#"${FILESDIR}/01-rename-processcore.patch"
-	"${FILESDIR}/02-fix-nvidia-smi.patch"
+	"${FILESDIR}/01-rename-processcore.patch"
+	"${FILESDIR}/02-fix-processcore.patch"
+	"${FILESDIR}/03-fix-nvidia-smi.patch"
 )
 
 src_configure() {

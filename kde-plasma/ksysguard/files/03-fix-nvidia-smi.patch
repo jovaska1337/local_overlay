@@ -12,14 +12,6 @@
  };
 --- a/processcore/plugins/nvidia/nvidia.cpp
 +++ b/processcore/plugins/nvidia/nvidia.cpp
-@@ -9,6 +9,7 @@
- #include <QDebug>
- #include <QProcess>
- #include <QStandardPaths>
-+#include <QRegularExpression>
- 
- #include <KLocalizedString>
- #include <KPluginFactory>
 @@ -53,36 +54,72 @@
      m_process = new QProcess(this);
      m_process->setProgram(m_sniExecutablePath);
@@ -44,11 +36,11 @@
 +                }
 +
 +                // parse header
-+                m_expected = 0;
++                m_expected = -1; // header has one extra column
 +                for (const auto &column : QStringView(line).split(QLatin1Char(' '), Qt::SkipEmptyParts))
 +                {
 +                    // format header --> reset
-+                    if ((m_expected == 1) && !QString::compare(column, "idx", Qt::CaseInsensitive)) {
++                    if ((m_expected == 0) && !QString::compare(column, "idx", Qt::CaseInsensitive)) {
 +                        m_expected = -1;
 +                        break;
 +
