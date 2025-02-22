@@ -1,9 +1,6 @@
 # Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-# FIXME: make this build from:
-# https://github.com/zvova7890/ksysguard6
-
 EAPI=8
 
 ECM_HANDBOOK="forceoptional"
@@ -50,7 +47,6 @@ DEPEND="
 	>=kde-frameworks/kwidgetsaddons-${KFMIN}:6
 	>=kde-frameworks/kwindowsystem-${KFMIN}:6
 	>=kde-frameworks/kxmlgui-${KFMIN}:6
-	kde-plasma/libksysguard:6
 	lm-sensors? ( sys-apps/lm-sensors:= )
 "
 RDEPEND="${DEPEND}"
