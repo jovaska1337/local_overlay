@@ -19,9 +19,16 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE="+desktop-entry"
 
+# FIXME: allow to compile with qt5 or qt6 somehow
+# -> not sure if build system allows of to pick...
 DEPEND="
-	dev-qt/qtgui:5
-	dev-qt/qtwidgets:5
+	|| (
+		|| (
+			dev-qt/qtgui:5
+			dev-qt/qtwidgets:5
+		)
+		dev-qt/qtbase:6
+	)
 	>=dev-libs/inih-53"
 BDEPEND="
 	${DEPEND}

@@ -1,8 +1,8 @@
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -6,16 +6,8 @@
- project(qzdl LANGUAGES C CXX)
- find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
+ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets)
+ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets REQUIRED)
  
 -include(FetchContent)
 -FetchContent_Declare(
@@ -12,7 +12,7 @@
 -)
 -FetchContent_GetProperties(inih)
 -if (NOT inih_POPULATED)
--	FetchContent_Populate(inih)
+-	FetchContent_MakeAvailable(inih)
 -endif()
 +find_package(PkgConfig REQUIRED)
 +pkg_check_modules(INIH REQUIRED inih)

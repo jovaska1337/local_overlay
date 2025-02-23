@@ -29,7 +29,7 @@ RDEPEND="${DEPEND}"
 
 #DOCS=( README.md )
 
-#PATCHES=( "${FILESDIR}/window-class.patch" )
+#PATCHES=( "${FILESDIR}/kdecoration3.patch" )
 
 src_unpack()
 {
