@@ -14,16 +14,16 @@ RESTRICT="mirror"
 inherit ecm
 
 # currently all changes are in kf6 instead of master!
-EGIT_BRANCH="kf6"
+EGIT_BRANCH="fix-plugins"
 
 DESCRIPTION="Network-enabled resource usage monitor"
 HOMEPAGE="https://apps.kde.org/ksysguard/ https://userbase.kde.org/KSysGuard"
 
 if [[ "${PV}" == *9999 ]]; then
-	EGIT_REPO_URI="https://github.com/zvova7890/ksysguard6.git"
+	EGIT_REPO_URI="https://github.com/jovaska1337/ksysguard6.git"
 	inherit git-r3
 else
-	SRC_URI="https://github.com/zvova7890/ksysguard6.git/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
+	SRC_URI="https://github.com/jovaska1337/ksysguard6.git/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~arm64"
 fi
 
@@ -50,13 +50,6 @@ DEPEND="
 	lm-sensors? ( sys-apps/lm-sensors:= )
 "
 RDEPEND="${DEPEND}"
-
-PATCHES=(
-	"${FILESDIR}/00-fix-plugins.patch"
-	"${FILESDIR}/01-rename-processcore.patch"
-	"${FILESDIR}/02-fix-processcore.patch"
-	"${FILESDIR}/03-fix-nvidia-smi.patch"
-)
 
 src_configure() {
 	local mycmakeargs=(
