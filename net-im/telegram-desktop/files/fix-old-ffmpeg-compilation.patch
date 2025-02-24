@@ -1,6 +1,31 @@
+From ab150390ca2df1a6232364f9e79fda0a5f4112b7 Mon Sep 17 00:00:00 2001
+From: jovaska <ovaska.juho@gmail.com>
+Date: Sun, 23 Feb 2025 20:50:20 +0200
+Subject: [PATCH] Fix compilation with ffmpeg-4.x
+
+---
+ Telegram/SourceFiles/ffmpeg/ffmpeg_utility.cpp         |  5 +++--
+ .../media/audio/media_audio_local_cache.cpp            | 10 ++++++++--
+ .../SourceFiles/ui/controls/round_video_recorder.cpp   |  4 ++--
+ 3 files changed, 13 insertions(+), 6 deletions(-)
+
+diff --git a/Telegram/SourceFiles/ffmpeg/ffmpeg_utility.cpp b/Telegram/SourceFiles/ffmpeg/ffmpeg_utility.cpp
+index 8fd0f3e978eb12..3811cbc860927a 100644
 --- a/Telegram/SourceFiles/ffmpeg/ffmpeg_utility.cpp
 +++ b/Telegram/SourceFiles/ffmpeg/ffmpeg_utility.cpp
-@@ -564,7 +564,7 @@
+@@ -546,9 +546,10 @@ SwresamplePointer MakeSwresamplePointer(
+ 	}
+ 
+ 	// Initialize audio resampler
++	AvErrorWrap error;
+ #if DA_FFMPEG_NEW_CHANNEL_LAYOUT
+ 	auto result = (SwrContext*)nullptr;
+-	auto error = AvErrorWrap(swr_alloc_set_opts2(
++	error = AvErrorWrap(swr_alloc_set_opts2(
+ 		&result,
+ 		dstLayout,
+ 		dstFormat,
+@@ -564,7 +565,7 @@ SwresamplePointer MakeSwresamplePointer(
  	}
  #else // DA_FFMPEG_NEW_CHANNEL_LAYOUT
  	auto result = swr_alloc_set_opts(
@@ -9,26 +34,25 @@
  		dstLayout,
  		dstFormat,
  		dstRate,
-@@ -576,6 +576,7 @@
- 	if (!result) {
- 		LogError(u"swr_alloc_set_opts"_q);
- 	}
-+	auto
- #endif // DA_FFMPEG_NEW_CHANNEL_LAYOUT
- 
- 	error = AvErrorWrap(swr_init(result));
+diff --git a/Telegram/SourceFiles/media/audio/media_audio_local_cache.cpp b/Telegram/SourceFiles/media/audio/media_audio_local_cache.cpp
+index c8b90f79826392..7d9f994001aa41 100644
 --- a/Telegram/SourceFiles/media/audio/media_audio_local_cache.cpp
 +++ b/Telegram/SourceFiles/media/audio/media_audio_local_cache.cpp
-@@ -44,7 +44,7 @@
+@@ -44,7 +44,13 @@ constexpr auto kFrameSize = 4096;
  		return {};
  	}
  
--	auto inCodec = (const AVCodec*)nullptr;
++
++#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 79, 100)
+ 	auto inCodec = (const AVCodec*)nullptr;
++#else
 +	auto inCodec = (AVCodec*)nullptr;
++#endif
++
  	const auto streamId = av_find_best_stream(
  		input.get(),
  		AVMEDIA_TYPE_AUDIO,
-@@ -152,10 +152,10 @@
+@@ -152,10 +158,10 @@ constexpr auto kFrameSize = 4096;
  		inCodecContext->sample_rate,
  		&outCodecContext->ch_layout,
  #else // DA_FFMPEG_NEW_CHANNEL_LAYOUT
@@ -41,9 +65,11 @@
  #endif // DA_FFMPEG_NEW_CHANNEL_LAYOUT
  		outCodecContext->sample_fmt,
  		outCodecContext->sample_rate);
+diff --git a/Telegram/SourceFiles/ui/controls/round_video_recorder.cpp b/Telegram/SourceFiles/ui/controls/round_video_recorder.cpp
+index 812a4844c2c786..3c904cd6bea473 100644
 --- a/Telegram/SourceFiles/ui/controls/round_video_recorder.cpp
 +++ b/Telegram/SourceFiles/ui/controls/round_video_recorder.cpp
-@@ -341,10 +341,10 @@
+@@ -341,10 +341,10 @@ bool RoundVideoRecorder::Private::initAudio() {
  		&_swrContext);
  #else // DA_FFMPEG_NEW_CHANNEL_LAYOUT
  	_swrContext = MakeSwresamplePointer(
