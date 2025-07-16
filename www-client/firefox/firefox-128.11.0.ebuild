@@ -3,9 +3,9 @@
 
 EAPI=8
 
-FIREFOX_PATCHSET="firefox-128esr-patches-08.tar.xz"
+FIREFOX_PATCHSET="firefox-128esr-patches-11.tar.xz"
 
-LLVM_COMPAT=( 17 18 19 )
+LLVM_COMPAT=( 17 18 19 20 )
 
 PYTHON_COMPAT=( python3_{10..12} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
