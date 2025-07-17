@@ -51,6 +51,10 @@ DEPEND="
 "
 RDEPEND="${DEPEND}"
 
+PATCHES=(
+	"${FILESDIR}/fix-build.patch"
+)
+
 src_configure() {
 	local mycmakeargs=(
 		$(cmake_use_find_package lm-sensors Sensors)

@@ -1,0 +1,11 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -143,8 +143,6 @@
+ add_feature_info(KAUTH_HELPER ${ENABLE_KAUTH_HELPER} "Build and install ksysguardprocesslist_helper KAuth helper")
+ 
+ 
+-find_package(KSysGuard REQUIRED)
+-
+ add_definitions(-DQT_NO_URL_CAST_FROM_STRING)
+ add_definitions(-DQT_USE_QSTRINGBUILDER)
+ #add_definitions(-DQT_NO_CAST_FROM_ASCII)
