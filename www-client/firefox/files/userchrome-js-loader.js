@@ -2,8 +2,8 @@
 //  local_overlay userChrome.js loader for GNU IceCat  //
 /////////////////////////////////////////////////////////
 // this code provides a simple userChrome.js loader,   //
-// controlled by 'custom.userchromejs' that attempts   /
-// to import and load userChrome.js <profile>/chrome.  //
+// controlled by 'custom.userchromejs' that attempts   //
+// to import and load <profile>/chrome/userChrome.js   //
 // --------------------------------------------------  //
 // !! NOTE THAT THIS SCRIPT IS RUN WITH IN THE FULL !! //
 // !! CHROME CONTEXT AND CAN LITERALLY DO ANYTHING  !! //

@@ -1,0 +1,20 @@
+--- a/browser/base/content/browser-menubar.inc
++++ b/browser/base/content/browser-menubar.inc
+@@ -362,6 +362,7 @@
+                         data-l10n-id="menu-tools-fxa-re-auth"/>
+ 
+               <menuitem id="menu_openFirefoxView"
++                        hidden="true"
+                         data-l10n-id="menu-tools-firefox-view"/>
+               <menuseparator id="devToolsSeparator"/>
+               <menu id="browserToolsMenu" data-l10n-id="menu-tools-browser-tools">
+--- a/browser/base/content/navigator-toolbox.inc.xhtml
++++ b/browser/base/content/navigator-toolbox.inc.xhtml
+@@ -41,6 +41,7 @@
+                        role="button"
+                        aria-pressed="false"
+                        cui-areatype="toolbar"
++                       hidden="true"
+                        removable="true"/>
+ 
+         <tabs id="tabbrowser-tabs"

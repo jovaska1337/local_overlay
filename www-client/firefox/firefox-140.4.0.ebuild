@@ -3,26 +3,26 @@
 
 EAPI=8
 
-FIREFOX_PATCHSET="firefox-128esr-patches-11.tar.xz"
+FIREFOX_PATCHSET="firefox-140esr-patches-03.tar.xz"
+FIREFOX_LOONG_PATCHSET="firefox-139-loong-patches-02.tar.xz"
 
-LLVM_COMPAT=( 17 18 19 20 )
-
-PYTHON_COMPAT=( python3_{10..12} )
-PYTHON_REQ_USE="ncurses,sqlite,ssl"
+LLVM_COMPAT=( 19 20 )
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
 RUST_NEEDS_LLVM=1
-# If not building with clang we need at least rust 1.76
-RUST_MIN_VER=1.77.1
 
-WANT_AUTOCONF="2.1"
+# If not building with clang we need at least rust 1.76
+RUST_MIN_VER=1.82.0
+
+PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 VIRTUALX_REQUIRED="manual"
 
 # Information about the bundled wasi toolchain from
 # https://github.com/WebAssembly/wasi-sdk/
-WASI_SDK_VER=25.0
-WASI_SDK_LLVM_VER=19
+WASI_SDK_VER=27.0
+WASI_SDK_LLVM_VER=20
 
 MOZ_ESR=yes
 
@@ -40,10 +40,10 @@ fi
 if [[ -n ${MOZ_ESR} ]] ; then
 	# ESR releases have slightly different version numbers
 	MOZ_PV="${MOZ_PV}esr"
-	HOMEPAGE="https://www.mozilla.org/firefox https://www.mozilla.org/firefox/enterprise/"
+	HOMEPAGE="https://www.firefox.com https://www.firefox.com/enterprise/"
 	SLOT="esr"
 else
-	HOMEPAGE="https://www.mozilla.org/firefox"
+	HOMEPAGE="https://www.firefox.com"
 	SLOT="rapid"
 fi
 
@@ -52,7 +52,7 @@ MOZ_P="${MOZ_PN}-${MOZ_PV}"
 MOZ_PV_DISTFILES="${MOZ_PV}${MOZ_PV_SUFFIX}"
 MOZ_P_DISTFILES="${MOZ_PN}-${MOZ_PV_DISTFILES}"
 
-inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
+inherit check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
 	optfeature pax-utils python-any-r1 readme.gentoo-r1 rust toolchain-funcs virtualx xdg
 
 MOZ_SRC_BASE_URI="https://archive.mozilla.org/pub/${MOZ_PN}/releases/${MOZ_PV}"
@@ -68,17 +68,21 @@ PATCH_URIS=(
 DESCRIPTION="Firefox Web Browser"
 SRC_URI="${MOZ_SRC_BASE_URI}/source/${MOZ_P}.source.tar.xz -> ${MOZ_P_DISTFILES}.source.tar.xz
 	${PATCH_URIS[@]}
+	loong? (
+		https://dev.gentoo.org/~xen0n/distfiles/www-client/${MOZ_PN}/${FIREFOX_LOONG_PATCHSET}
+	)
 	wasm-sandbox? (
 		amd64? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER/.*/}/wasi-sdk-${WASI_SDK_VER}-x86_64-linux.tar.gz )
 		arm64? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER/.*/}/wasi-sdk-${WASI_SDK_VER}-arm64-linux.tar.gz )
 	)"
+
 S="${WORKDIR}/${PN}-${PV%_*}"
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
-KEYWORDS="amd64 arm64 ~ppc64 ~riscv ~x86"
+KEYWORDS="amd64 arm64 ~loong ~ppc64 ~riscv ~x86"
 
 IUSE="+clang dbus debug eme-free hardened hwaccel jack libproxy pgo pulseaudio selinux sndio"
 IUSE+=" +system-av1 +system-harfbuzz +system-icu +system-jpeg +system-libevent +system-libvpx"
-IUSE+=" +system-png +system-webp wayland wifi +X"
+IUSE+=" system-pipewire system-png +system-webp test wayland wifi +X"
 
 # Firefox-only IUSE
 IUSE+=" +gmp-autoupdate gnome-shell +jumbo-build openh264 +telemetry wasm-sandbox"
@@ -86,20 +90,18 @@ IUSE+=" +gmp-autoupdate gnome-shell +jumbo-build openh264 +telemetry wasm-sandbo
 ###############################################################################
 
 # jovaska: new USE flags to enable modified functionality
-IUSE+=" +userchrome-js +unity-menubar +icecat-patches +extra-patches +no-api-keys kde"
+IUSE+=" +userchrome-js +icecat-patches +extra-patches +no-api-keys"
 
 ###############################################################################
 
-# "wasm-sandbox? ( llvm_slot_19 )" - most likely due to wasi-sdk-25.0 being llvm-19 based, and
-# llvm/clang-19 turning on reference types for wasm targets. Luckily clang-19 is already stable in
-# Gentoo so it should be widely adopted already - however, it might be possible to workaround
-# the constraint simply by modifying CFLAGS when using clang-17/18. Will need to investigate (bmo#1905251)
 REQUIRED_USE="|| ( X wayland )
 	debug? ( !system-av1 )
 	pgo? ( jumbo-build )
-	wasm-sandbox? ( llvm_slot_19 )
 	wayland? ( dbus )
-	wifi? ( dbus )"
+	wifi? ( dbus )
+"
+
+RESTRICT="!test? ( test )"
 
 FF_ONLY_DEPEND="!www-client/firefox:0
 	selinux? ( sec-policy/selinux-mozilla )"
@@ -116,7 +118,7 @@ BDEPEND="${PYTHON_DEPS}
 	app-alternatives/awk
 	app-arch/unzip
 	app-arch/zip
-	>=dev-util/cbindgen-0.26.0
+	>=dev-util/cbindgen-0.27.0
 	net-libs/nodejs
 	virtual/pkgconfig
 	amd64? ( >=dev-lang/nasm-2.14 )
@@ -128,10 +130,7 @@ BDEPEND="${PYTHON_DEPS}
 			x11-apps/xhost
 		)
 		!X? (
-			|| (
-				gui-wm/tinywl
-				<gui-libs/wlroots-0.17.3[tinywl(-)]
-			)
+			gui-wm/tinywl
 			x11-misc/xkeyboard-config
 		)
 	)"
@@ -140,17 +139,18 @@ COMMON_DEPEND="${FF_ONLY_DEPEND}
 	dev-libs/expat
 	dev-libs/glib:2
 	dev-libs/libffi:=
-	>=dev-libs/nss-3.101
+	>=dev-libs/nss-3.112.2
 	>=dev-libs/nspr-4.35
 	media-libs/alsa-lib
 	media-libs/fontconfig
 	media-libs/freetype
 	media-libs/mesa
-	media-video/ffmpeg
+	<media-video/ffmpeg-8.0
 	sys-libs/zlib
 	virtual/freedesktop-icon-theme
 	x11-libs/cairo
 	x11-libs/gdk-pixbuf:2
+	x11-libs/libdrm
 	x11-libs/pango
 	x11-libs/pixman
 	dbus? (
@@ -168,17 +168,18 @@ COMMON_DEPEND="${FF_ONLY_DEPEND}
 	sndio? ( >=media-sound/sndio-1.8.0-r1 )
 	system-av1? (
 		>=media-libs/dav1d-1.0.0:=
-		>=media-libs/libaom-1.0.0:=
+		>=media-libs/libaom-3.10.0:=
 	)
 	system-harfbuzz? (
 		>=media-libs/harfbuzz-2.8.1:0=
 		!wasm-sandbox? ( >=media-gfx/graphite2-1.3.13 )
 	)
-	system-icu? ( >=dev-libs/icu-73.1:= )
+	system-icu? ( >=dev-libs/icu-76.1:= )
 	system-jpeg? ( >=media-libs/libjpeg-turbo-1.2.1:= )
 	system-libevent? ( >=dev-libs/libevent-2.1.12:0=[threads(+)] )
 	system-libvpx? ( >=media-libs/libvpx-1.8.2:0=[postproc] )
-	system-png? ( >=media-libs/libpng-1.6.35:0=[apng] )
+	system-pipewire? ( >=media-video/pipewire-1.4.7-r2:= )
+	system-png? ( >=media-libs/libpng-1.6.45:0=[apng] )
 	system-webp? ( >=media-libs/libwebp-1.1.0:0= )
 	wayland? (
 		>=media-libs/libepoxy-1.5.10-r1
@@ -459,17 +460,13 @@ virtwl() {
 
 pkg_pretend() {
 	if [[ ${MERGE_TYPE} != binary ]] ; then
-		if use pgo ; then
-			if ! has usersandbox $FEATURES ; then
-				die "You must enable usersandbox as X server can not run as root!"
-			fi
-		fi
-
 		# Ensure we have enough disk space to compile
-		if use pgo || tc-is-lto || use debug ; then
-			CHECKREQS_DISK_BUILD="13500M"
+		if use pgo || use debug ; then
+			CHECKREQS_DISK_BUILD="14300M"
+		elif tc-is-lto ; then
+			CHECKREQS_DISK_BUILD="10600M"
 		else
-			CHECKREQS_DISK_BUILD="6600M"
+			CHECKREQS_DISK_BUILD="7400M"
 		fi
 
 		check-reqs_pkg_pretend
@@ -502,10 +499,12 @@ pkg_setup() {
 		fi
 
 		# Ensure we have enough disk space to compile
-		if use pgo || [[ ${use_lto} == "yes" ]] || use debug ; then
-			CHECKREQS_DISK_BUILD="13500M"
+		if use pgo || use debug ; then
+			CHECKREQS_DISK_BUILD="14300M"
+		elif [[ ${use_lto} == "yes" ]] ; then
+			CHECKREQS_DISK_BUILD="10600M"
 		else
-			CHECKREQS_DISK_BUILD="6400M"
+			CHECKREQS_DISK_BUILD="7400M"
 		fi
 
 		check-reqs_pkg_setup
@@ -543,22 +542,24 @@ pkg_setup() {
 			ewarn "/dev/shm is not mounted -- expect build failures!"
 		fi
 
-		# Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
-		# Note: These are for Gentoo Linux use ONLY. For your own distribution, please
-		# get your own set of keys.
-		if [[ -z "${MOZ_API_KEY_GOOGLE+set}" ]] ; then
-			MOZ_API_KEY_GOOGLE="AIzaSyDEAOvatFogGaPi0eTgsV_ZlEzx0ObmepsMzfAc"
-		fi
+		if ! use no-api-keys; then
+			# Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
+			# Note: These are for Gentoo Linux use ONLY. For your own distribution, please
+			# get your own set of keys.
+			if [[ -z "${MOZ_API_KEY_GOOGLE+set}" ]] ; then
+				MOZ_API_KEY_GOOGLE="AIzaSyDEAOvatFogGaPi0eTgsV_ZlEzx0ObmepsMzfAc"
+			fi
 
-		if [[ -z "${MOZ_API_KEY_LOCATION+set}" ]] ; then
-			MOZ_API_KEY_LOCATION="AIzaSyB2h2OuRgGaPicUgy5N-5hsZqiPW6sH3n_rptiQ"
-		fi
+			if [[ -z "${MOZ_API_KEY_LOCATION+set}" ]] ; then
+				MOZ_API_KEY_LOCATION="AIzaSyB2h2OuRgGaPicUgy5N-5hsZqiPW6sH3n_rptiQ"
+			fi
 
-		# Mozilla API keys (see https://location.services.mozilla.com/api)
-		# Note: These are for Gentoo Linux use ONLY. For your own distribution, please
-		# get your own set of keys.
-		if [[ -z "${MOZ_API_KEY_MOZILLA+set}" ]] ; then
-			MOZ_API_KEY_MOZILLA="edb3d487-3a84-46m0ap1e3-9dfd-92b5efaaa005"
+			# Mozilla API keys (see https://location.services.mozilla.com/api)
+			# Note: These are for Gentoo Linux use ONLY. For your own distribution, please
+			# get your own set of keys.
+			if [[ -z "${MOZ_API_KEY_MOZILLA+set}" ]] ; then
+				MOZ_API_KEY_MOZILLA="edb3d487-3a84-46m0ap1e3-9dfd-92b5efaaa005"
+			fi
 		fi
 
 		# Ensure we use C locale when building, bug #746215
@@ -594,18 +595,13 @@ src_prepare() {
 		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
 	fi
 
-	# Workaround for bgo#917599
-	if has_version ">=dev-libs/icu-74.1" && use system-icu ; then
-		eapply "${WORKDIR}"/firefox-patches/*-bmo-1862601-system-icu-74.patch
-	fi
-	rm -v "${WORKDIR}"/firefox-patches/*-bmo-1862601-system-icu-74.patch || die
-
 	# Workaround for bgo#915651 on musl
 	if use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
 	fi
 
 	eapply "${WORKDIR}/firefox-patches"
+	use loong && eapply "${WORKDIR}/firefox-loong-patches"
 
 	###########################################################################
 
@@ -640,66 +636,50 @@ src_prepare() {
 		#done < <( cd "${S}"; find . -type d -print )
 
 		# copy IceCat settings
-		cp "${FILESDIR}/icecat/settings.js" "${S}/browser/app/profile/firefox.js" || die
+		cat "${FILESDIR}/icecat/settings.js" >> "${S}/browser/app/profile/firefox.js" || die
 
 		# makeicecat configure() in-source sed patches
 
 		# Disable healthreport
-		sed "/\"datareporting\\.healthreport\\.infoURL\"/s|http.*|about:blank\");|" \
-			-i ${S}/modules/libpref/init/all.js || die
-		sed '/"datareporting\.healthreport\.uploadEnabled"/s/true/false/' \
-			-i "${S}"/modules/libpref/init/all.js || die
+		sed "/\"datareporting\\.healthreport\\.infoURL\"/s|http.*|https://${LEGALINFO_URL}\");|" -i ${S}/modules/libpref/init/all.js
+		sed '/"datareporting\.healthreport\.uploadEnabled"/s/true/false/' -i ${S}/modules/libpref/init/all.js
 
 		# Disable activity-stream anti-features.
 		# These are not condensed into a single sed script so that it
 		# fails on individual commands that didn't change the source
-		local activity_stream="${S}"/browser/components/newtab/lib/ActivityStream.sys.mjs # jovaska: extension change
-		sed '/^const DEFAULT_SITES/,/^])\;/c const DEFAULT_SITES = new Map\([[""]]\);' \
-			-i "${S}"/browser/components/newtab/lib/DefaultSites.sys.mjs || die
-		sed '/"showSponsored"/,/value/s/value: true/value: false/' -i $activity_stream || die
-		sed '/  "telemetry"/,/value/s/value: true/value: false/' -i $activity_stream || die
-		sed '/"section\.highlights\.includePocket"/,/value/s/value: true/value: false/' -i $activity_stream || die
-		sed '/read_more_endpoint:/,/http/s/"http.*/"",/' -i $activity_stream || die
-		sed '/stories_endpoint: `/,/}`,/c stories_endpoint: "",' -i $activity_stream || die
-		sed 's/\(stories_referrer:\) .http.*/\1 "",/' -i $activity_stream || die
-		sed 's/\(topics_endpoint:\) .http.*/\1 "",/' -i $activity_stream || die
-		sed '/"telemetry\.structuredIngestion\.endpoint"/,/value/s/value: .*/value: "",/' -i $activity_stream || die
-		sed '/layout_endpoint:/,/http/s/"http.*/"",/' -i $activity_stream || die
-		sed '/name: "telemetry"/,/value/s/value: true/value: false/' -i $activity_stream || die
-		sed '/name: "system\.topstories"/,/},/s/.*!!locales.*/false/' -i $activity_stream || die
-		sed 's/Ubuntu, //' -i ${S}/browser/components/newtab/css/activity-stream*.css || die
+		local activity_stream=${S}/browser/extensions/newtab/lib/ActivityStream.sys.mjs
+		sed '/^const DEFAULT_SITES/,/^])\;/c const DEFAULT_SITES = new Map\([[""]]\);' -i ${S}/browser/extensions/newtab/lib/DefaultSites.sys.mjs
+		sed '/"showSponsored"/,/value/s/value: true/value: false/' -i $activity_stream
+		sed '/  "telemetry"/,/value/s/value: true/value: false/' -i $activity_stream
+		sed '/"section\.highlights\.includePocket"/,/value/s/value: true/value: false/' -i $activity_stream
+		sed '/read_more_endpoint:/,/http/s/"http.*/"",/' -i $activity_stream
+		sed '/stories_endpoint: `/,/}`,/c stories_endpoint: "",' -i $activity_stream
+		sed 's/\(stories_referrer:\) .http.*/\1 "",/' -i $activity_stream
+		sed 's/\(topics_endpoint:\) .http.*/\1 "",/' -i $activity_stream
+		sed '/"telemetry\.structuredIngestion\.endpoint"/,/value/s/value: .*/value: "",/' -i $activity_stream
+		sed '/name: "telemetry"/,/value/s/value: true/value: false/' -i $activity_stream
+		sed '/name: "system\.topstories"/,/},/s/.*!!locales.*/false/' -i $activity_stream
 
-		sed '/^]$/d' -i ${S}/browser/components/newtab/data/content/tippytop/top_sites.json || die
-		sed 's/}$/},/' -i ${S}/browser/components/newtab/data/content/tippytop/top_sites.json || die
-		echo "{ data: [] }" > "${S}"/browser/components/newtab/data/content/tippytop/top_sites.json || die
-		echo "{ data: [], \"timestamp\": 1647020600359 }" > ${S}/services/settings/dumps/main/top-sites.json || die
+		echo "{ data: [] }" > ${S}/browser/components/topsites/content/tippytop/top_sites.json
+		echo "{ data: [], \"timestamp\": 1647020600359 }" > ${S}/browser/components/topsites/content/tippytop/top_sites.json
 
-		# IceCat menu l10n (does not work)
-		#sed '/appmenuitem-settings/,+1s/\(.*.label = \)\(.*\)/\1\2\nappmenuitem-icecat-settings =\n\1IceCat \2/' -i \
-		#	"${S}"/l10n/*/browser/browser/appmenu.ftl "${S}"/browser/locales/en-US/browser/appmenu.ftl || die
+		# IceCat menu l10n
+		#sed '/appmenuitem-settings/,+1s/\(.*.label = \)\(.*\)/\1\2\nappmenuitem-icecat-settings =\n\1IceCat \2/' -i ${S}/l10n/*/browser/browser/appmenu.ftl ${S}/browser/locales/en-US/browser/appmenu.ftl
 
 		# Disable remote settings server
-		sed '/REMOTE_SETTINGS_SERVER_URL/,/^$/s/http.*"/"/' -i "${S}"/toolkit/modules/AppConstants.sys.mjs || die
+		sed '/REMOTE_SETTINGS_SERVER_URL/,/^$/s/http.*"/"/' -i ${S}/toolkit/modules/AppConstants.sys.mjs
 	fi
 
-	# jovaska: apply openSUSE unity menubar patch
-	if use unity-menubar; then
-		# revert the commits that introduce unfinished code
-		local temp
-		while read temp; do
-			eapply "$temp" || die
-		done < <( find "${FILESDIR}/patches/menubar" -type f \
-			-name "$(ver_cut 1)-unity-menubar-revert*.patch" | sort )
-
-		# enable the actually working implementation
-		eapply "${FILESDIR}/patches/menubar/$(ver_cut 1)-unity-menubar.patch"
-	fi
+	# jovaska: menubar code has been merged into firefox, these are just patches
+	# which are merged into newer versions that actually make it work
+	eapply "${FILESDIR}/patches/$(ver_cut 1)-menubar-fix-root-window.patch"
+	eapply "${FILESDIR}/patches/$(ver_cut 1)-menubar-fix-events.patch"
 
 	# jovaska: apply openSUSE KDE integration patch
-	if use kde; then
-		eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-toolkit.patch"
-		eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-browser.patch"
-	fi
+	#if use kde; then
+	#	eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-integration-shell.patch"
+	#	eapply "${FILESDIR}/patches/$(ver_cut 1)-kde-integration-toolkit.patch"
+	#fi
 
 	# jovaska: apply other custom patches
 	if use extra-patches; then
@@ -741,7 +721,7 @@ src_prepare() {
 			> "${S}/services/settings/dumps/main/top-sites.json" || die
 
 		# OpenSUSE gconf proxy fix
-		#eapply "${FILESDIR}/patches/$(ver_cut 1)-gconf-proxy.patch"
+		eapply "${FILESDIR}/patches/$(ver_cut 1)-no-gconf-proxy.patch"
 	fi
 
 	###########################################################################
@@ -760,6 +740,10 @@ src_prepare() {
 			export RUST_TARGET="i686-unknown-linux-musl"
 		elif use arm64 ; then
 			export RUST_TARGET="aarch64-unknown-linux-musl"
+		elif use loong; then
+			# Only the LP64D ABI of LoongArch64 is actively supported among
+			# the wider Linux ecosystem, so the assumption is safe.
+			export RUST_TARGET="loongarch64-unknown-linux-musl"
 		elif use ppc64 ; then
 			export RUST_TARGET="powerpc64le-unknown-linux-musl"
 		elif use riscv ; then
@@ -795,26 +779,11 @@ src_prepare() {
 	sed -i -e "s/multiprocessing.cpu_count()/$(makeopts_jobs)/" \
 		"${S}"/build/moz.configure/lto-pgo.configure || die "Failed sedding multiprocessing.cpu_count"
 
-	# Make ICU respect MAKEOPTS
 	sed -i -e "s/multiprocessing.cpu_count()/$(makeopts_jobs)/" \
-		"${S}"/intl/icu_sources_data.py || die "Failed sedding multiprocessing.cpu_count"
-
-	# Respect MAKEOPTS all around (maybe some find+sed is better)
-	sed -i -e "s/multiprocessing.cpu_count()/$(makeopts_jobs)/" \
-		"${S}"/python/mozbuild/mozbuild/base.py || die "Failed sedding multiprocessing.cpu_count"
-
-	sed -i -e "s/multiprocessing.cpu_count()/$(makeopts_jobs)/" \
-		"${S}"/third_party/libwebrtc/build/toolchain/get_cpu_count.py || die "Failed sedding multiprocessing.cpu_count"
-
-	sed -i -e "s/multiprocessing.cpu_count()/$(makeopts_jobs)/" \
-		"${S}"/third_party/libwebrtc/build/toolchain/get_concurrent_links.py ||
-			die "Failed sedding multiprocessing.cpu_count"
+		"${S}"/third_party/chromium/build/toolchain/get_cpu_count.py || die "Failed sedding multiprocessing.cpu_count"
 
 	sed -i -e "s/multiprocessing.cpu_count()/$(makeopts_jobs)/" \
 		"${S}"/third_party/python/gyp/pylib/gyp/input.py || die "Failed sedding multiprocessing.cpu_count"
-
-	sed -i -e "s/multiprocessing.cpu_count()/$(makeopts_jobs)/" \
-		"${S}"/python/mozbuild/mozbuild/code_analysis/mach_commands.py || die "Failed sedding multiprocessing.cpu_count"
 
 	# sed-in toolchain prefix
 	sed -i \
@@ -867,11 +836,9 @@ src_prepare() {
 	mkdir -p "${BUILD_DIR}" || die
 
 	# Write API keys to disk
-	if ! use no-api-keys; then # jovaska: added USE flag to disable API keys
-		echo -n "${MOZ_API_KEY_GOOGLE//gGaPi/}" > "${S}"/api-google.key || die
-		echo -n "${MOZ_API_KEY_LOCATION//gGaPi/}" > "${S}"/api-location.key || die
-		echo -n "${MOZ_API_KEY_MOZILLA//m0ap1/}" > "${S}"/api-mozilla.key || die
-	fi
+	echo -n "${MOZ_API_KEY_GOOGLE//gGaPi/}" > "${S}"/api-google.key || die
+	echo -n "${MOZ_API_KEY_LOCATION//gGaPi/}" > "${S}"/api-location.key || die
+	echo -n "${MOZ_API_KEY_MOZILLA//m0ap1/}" > "${S}"/api-mozilla.key || die
 
 	xdg_environment_reset
 }
@@ -962,21 +929,17 @@ src_configure() {
 		--disable-crashreporter \
 		--disable-disk-remnant-avoidance \
 		--disable-geckodriver \
-		--disable-gpsd \
 		--disable-install-strip \
 		--disable-legacy-profile-creation \
 		--disable-parental-controls \
 		--disable-strip \
-		--disable-tests \
 		--disable-updater \
-		--disable-valgrind \
 		--disable-wmf \
 		--enable-negotiateauth \
 		--enable-new-pass-manager \
 		--enable-official-branding \
+		--enable-packed-relative-relocs \
 		--enable-release \
-		--enable-system-ffi \
-		--enable-system-pixman \
 		--enable-system-policies \
 		--host="${CBUILD:-${CHOST}}" \
 		--libdir="${EPREFIX}/usr/$(get_libdir)" \
@@ -985,20 +948,23 @@ src_configure() {
 		--without-ccache \
 		--with-intl-api \
 		--with-libclang-path="$(llvm-config --libdir)" \
+		--with-system-ffi \
+		--with-system-gbm \
+		--with-system-libdrm \
 		--with-system-nspr \
 		--with-system-nss \
+		--with-system-pixman \
 		--with-system-zlib \
 		--with-toolchain-prefix="${CHOST}-" \
-		--with-unsigned-addon-scopes=app,system \
-		--x-includes="${ESYSROOT}/usr/include" \
-		--x-libraries="${ESYSROOT}/usr/$(get_libdir)"
+		--with-unsigned-addon-scopes=app,system
 
 	# Set update channel
 	local update_channel=release
 	[[ -n ${MOZ_ESR} ]] && update_channel=esr
-	mozconfig_add_options_ac '' --update-channel=${update_channel}
+	mozconfig_add_options_ac '' --enable-update-channel=${update_channel}
 
-	if ! use x86 ; then
+	# Whitelist to allow unkeyworded arches to build with "--disable-rust-simd" by default.
+	if use amd64 || use arm64 || use ppc64 || use loong || use riscv ; then
 		mozconfig_add_options_ac '' --enable-rust-simd
 	fi
 
@@ -1006,16 +972,17 @@ src_configure() {
 	# amd64, arm, arm64 & x86.
 	# Might want to flip the logic around if Firefox is to support more arches.
 	# bug 833001, bug 903411#c8
-	if use ppc64 || use riscv; then
+	if use loong || use ppc64 || use riscv; then
 		mozconfig_add_options_ac '' --disable-sandbox
 	else
 		mozconfig_add_options_ac '' --enable-sandbox
 	fi
 
-	# Enable JIT on riscv64 explicitly, since it's not activated automatically via "known arches" list.
-	# Update 128.1.0: Disable jit on riscv (this line can be blanked to disable by default),
-	# bgo#937867.
-	use riscv && mozconfig_add_options_ac 'Disable JIT for RISC-V 64' --disable-jit
+	# riscv-related options, bgo#947337, bgo#947338
+	if use riscv ; then
+		mozconfig_add_options_ac 'Disable JIT for RISC-V 64' --disable-jit
+		mozconfig_add_options_ac 'Disable webrtc for RISC-V' --disable-webrtc
+	fi
 
 	if [[ -s "${S}/api-google.key" ]] ; then
 		local key_origin="Gentoo default"
@@ -1059,6 +1026,7 @@ src_configure() {
 	mozconfig_use_with system-jpeg
 	mozconfig_use_with system-libevent
 	mozconfig_use_with system-libvpx
+	mozconfig_use_with system-pipewire
 	mozconfig_use_with system-png
 	mozconfig_use_with system-webp
 
@@ -1147,6 +1115,11 @@ src_configure() {
 	if use pgo ; then
 		mozconfig_add_options_ac '+pgo' MOZ_PGO=1
 
+		# Avoid compressing just-built instrumented Firefox with
+		# high levels of compression. Just use tar as a container
+		# to save >=10 minutes.
+		export MOZ_PKG_FORMAT=tar
+
 		if use clang ; then
 			# Used in build/pgo/profileserver.py
 			export LLVM_PROFDATA="llvm-profdata"
@@ -1203,8 +1176,8 @@ src_configure() {
 		else
 			mozconfig_add_options_ac 'relr elf-hack' --enable-elf-hack=relr
 		fi
-	elif use ppc64 || use riscv ; then
-		# '--disable-elf-hack' is not recognized on ppc64/riscv,
+	elif use loong || use ppc64 || use riscv ; then
+		# '--disable-elf-hack' is not recognized on loong/ppc64/riscv,
 		# see bgo #917049, #930046
 		:;
 	else
@@ -1235,6 +1208,8 @@ src_configure() {
 		mozconfig_add_options_mk '-telemetry setting' "MOZ_SERVICES_HEALTHREPORT=0"
 		mozconfig_add_options_mk '-telemetry setting' "MOZ_TELEMETRY_REPORTING=0"
 	fi
+
+	mozconfig_use_enable test tests
 
 	# Disable notification when build system has finished
 	export MOZ_NOSPAM=1
@@ -1313,6 +1288,29 @@ src_compile() {
 	${virtx_cmd} ./mach build --verbose || die
 }
 
+src_test() {
+	# https://firefox-source-docs.mozilla.org/testing/automated-testing/index.html
+	local -a failures=()
+
+	# Some tests respect this
+	local -x MOZ_HEADLESS=1
+
+	# Check testing/mach_commands.py
+	einfo "Testing with cppunittest ..."
+	./mach cppunittest
+	local ret=$?
+	if [[ ${ret} -ne 0 ]]; then
+		eerror "Test suite cppunittest failed with error code ${ret}"
+		failures+=( cppunittest )
+	fi
+
+	if [[ ${#failures} -eq 0 ]]; then
+		einfo "Test suites succeeded"
+	else
+		die "Test suites failed: ${failures[@]}"
+	fi
+}
+
 src_install() {
 	# xpcshell is getting called during install
 	pax-mark m \
@@ -1330,7 +1328,6 @@ src_install() {
 	if [[ -f "${ED}${MOZILLA_FIVE_HOME}/llvm-symbolizer" ]] ; then
 		rm -v "${ED}${MOZILLA_FIVE_HOME}/llvm-symbolizer" || die
 	fi
-
 
 	# Install policy (currently only used to disable application updates)
 	insinto "${MOZILLA_FIVE_HOME}/distribution"
@@ -1431,11 +1428,7 @@ src_install() {
 	# Add telemetry config prefs, just in case something happens in future and telemetry build
 	# options stop working.
 	if ! use telemetry ; then
-		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set telemetry prefs"
-		sticky_pref("toolkit.telemetry.dap_enabled", false);
-		pref("toolkit.telemetry.dap_helper", "");
-		pref("toolkit.telemetry.dap_leader", "");
-		EOF
+		cat "${FILESDIR}"/gentoo-telemetry-prefs.js >>"${GENTOO_PREFS}" || die "failed to set telemetry prefs"
 	fi
 
 	# Install language packs
@@ -1449,7 +1442,8 @@ src_install() {
 
 	# Prefer the upstream svg file they use when packaging flatpak so it's always up-to-date.
 	insinto /usr/share/icons/hicolor/symbolic/apps
-	newins "${S}"/taskcluster/docker/firefox-flatpak/firefox-symbolic.svg firefox-symbolic.svg
+	newins "${S}"/browser/installer/linux/app/flatpak/files/share/icons/hicolor/symbolic/apps/org.mozilla.firefox-symbolic.svg firefox-symbolic.svg
+	dosym -r /usr/share/icons/hicolor/symbolic/apps/firefox-symbolic.svg /usr/share/icons/hicolor/symbolic/apps/org.mozilla.firefox-symbolic.svg
 
 	local icon size
 	for icon in "${icon_srcdir}"/default*.png ; do
@@ -1529,7 +1523,6 @@ src_install() {
 		-e "s:@DEFAULT_WAYLAND@:${use_wayland}:" \
 		"${ED}/usr/bin/${PN}" || die
 
-	# jovaska: no README.gentoo bullshit
 	#readme.gentoo_create_doc
 }
 
@@ -1554,7 +1547,6 @@ pkg_postinst() {
 		ewarn "explained in https://bugs.gentoo.org/835078#c5 if Firefox crashes."
 	fi
 
-	# jovaska: no README.gentoo bullshit
 	#readme.gentoo_print_elog
 
 	optfeature_header "Optional programs for extra features:"

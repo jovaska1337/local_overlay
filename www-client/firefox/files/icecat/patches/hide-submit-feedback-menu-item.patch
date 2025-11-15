@@ -1,10 +1,10 @@
 --- a/browser/base/content/browser-menubar.inc
 +++ b/browser/base/content/browser-menubar.inc
-@@ -475,6 +475,7 @@
-                           oncommand="openTroubleshootingPage()"
-                           onclick="checkForMiddleClick(this, event);" data-l10n-id="menu-help-troubleshooting-info"/>
+@@ -432,6 +432,7 @@
+                           disabled="true"
+                           appmenu-data-l10n-id="appmenuitem-report-broken-site"/>
                  <menuitem id="feedbackPage"
 +                          hidden="true"
-                           oncommand="openFeedbackPage()"
-                           onclick="checkForMiddleClick(this, event);" data-l10n-id="menu-help-feedback-page"/>
+                           data-l10n-id="menu-help-share-ideas"
+                           appmenu-data-l10n-id="appmenu-help-share-ideas"/>
                  <menuitem id="helpSafeMode"

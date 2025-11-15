@@ -1,0 +1,37 @@
+
+# HG changeset patch
+# User Jesper Schmitz Mouridsen <jesper@schmitz.computer>
+# Date 1752260314 0
+# Node ID 672541ddf60276ce409f5f83fc1aa38583a1d941
+# Parent  a163b21b9749571a7f05ac9a5bb253e260f87f97
+Bug 1974023 - Fix gdk window used to associate native menu. r=desktop-theme-reviewers,emilio
+
+This change makes plasma global menubar import the menu on window
+change.
+
+Differential Revision: https://phabricator.services.mozilla.com/D254986
+
+
+diff --git a/widget/gtk/NativeMenuGtk.cpp b/widget/gtk/NativeMenuGtk.cpp
+--- a/widget/gtk/NativeMenuGtk.cpp
++++ b/widget/gtk/NativeMenuGtk.cpp
+@@ -734,16 +734,18 @@ void DBusMenuBar::OnNameOwnerChanged() {
+     return;
+   }
+   auto* gdkWin =
+       static_cast<GdkWindow*>(widget->GetNativeData(NS_NATIVE_WINDOW));
+   if (NS_WARN_IF(!gdkWin)) {
+     return;
+   }
+ 
++  gdkWin = gdk_window_get_toplevel(gdkWin);
++
+ #  ifdef MOZ_WAYLAND
+   if (auto* display = widget::WaylandDisplayGet()) {
+     if (!StaticPrefs::widget_gtk_global_menu_wayland_enabled()) {
+       return;
+     }
+     org_kde_kwin_appmenu_manager* appMenuManager = display->GetAppMenuManager();
+     if (NS_WARN_IF(!appMenuManager)) {
+       return;
+

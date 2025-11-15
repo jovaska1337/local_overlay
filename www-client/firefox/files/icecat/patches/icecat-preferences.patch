@@ -1,7 +1,64 @@
---- a/browser/components/preferences/privacy.inc.xhtml.orig	2021-08-17 15:38:19.838881866 -0400
-+++ b/browser/components/preferences/privacy.inc.xhtml	2021-08-17 15:39:01.382760058 -0400
-@@ -632,6 +632,83 @@
-          data-l10n-id="addressbar-suggestions-settings"/>
+diff --git a/browser/base/content/appmenu-viewcache.inc.xhtml b/browser/base/content/appmenu-viewcache.inc.xhtml
+index ec44a3b1a354..e469b754d93d 100644
+--- a/browser/base/content/appmenu-viewcache.inc.xhtml
++++ b/browser/base/content/appmenu-viewcache.inc.xhtml
+@@ -139,6 +139,9 @@
+                      key="key_preferencesCmdMac"
+ #endif
+                      />
++      <toolbarbutton id="appMenu-icecatsettings-button"
++                     class="subviewbutton"
++                     data-l10n-id="appmenuitem-icecat-settings"/>
+       <toolbarbutton id="appMenu-more-button2"
+                      class="subviewbutton subviewbutton-nav"
+                      data-l10n-id="appmenuitem-more-tools"
+diff --git a/browser/base/content/browser-menubar.inc b/browser/base/content/browser-menubar.inc
+index 01bca4ecb0de..7c755439d1d5 100644
+--- a/browser/base/content/browser-menubar.inc
++++ b/browser/base/content/browser-menubar.inc
+@@ -116,6 +116,8 @@
+                           />
+ #endif
+ #endif
++              <menuitem id="menu_icecat_preferences"
++	          data-l10n-id="appmenuitem-icecat-settings"/>
+               </menupopup>
+             </menu>
+ 
+diff --git a/browser/base/content/browser-menubar.js b/browser/base/content/browser-menubar.js
+index 61ae54a0884c..6d4c315427bc 100644
+--- a/browser/base/content/browser-menubar.js
++++ b/browser/base/content/browser-menubar.js
+@@ -16,6 +16,9 @@ document.addEventListener(
+         case "menu_preferences":
+           openPreferences(undefined);
+           break;
++        case "menu_icecat_preferences":
++          openPreferences("privacy-icecatPreferences");
++          break;
+ 
+         // == view-menu ==
+         case "menu_pageStyleNoStyle":
+diff --git a/browser/components/customizableui/content/panelUI.js b/browser/components/customizableui/content/panelUI.js
+index 689205034d9d..a80bbcfe2926 100644
+--- a/browser/components/customizableui/content/panelUI.js
++++ b/browser/components/customizableui/content/panelUI.js
+@@ -379,6 +379,9 @@ const PanelUI = {
+       case "appMenu-settings-button":
+         openPreferences();
+         break;
++      case "appMenu-icecatsettings-button":
++        openPreferences("privacy-icecatPreferences");
++        break;
+       case "appMenu-more-button2":
+         this.showMoreToolsPanel(target);
+         break;
+diff --git a/browser/components/preferences/privacy.inc.xhtml b/browser/components/preferences/privacy.inc.xhtml
+index 28e325c938de..fb7e669e07f6 100644
+--- a/browser/components/preferences/privacy.inc.xhtml
++++ b/browser/components/preferences/privacy.inc.xhtml
+@@ -691,6 +691,83 @@
+   </hbox>
  </groupbox>
  
 +<!-- IceCat-specific privacy group -->
@@ -84,18 +141,19 @@
  <hbox id="permissionsCategory"
        class="subcategory"
        hidden="true"
---- a/browser/components/preferences/privacy.js.orig	2021-08-17 15:39:19.662709308 -0400
-+++ b/browser/components/preferences/privacy.js	2021-08-17 16:10:17.129079115 -0400
-@@ -138,6 +138,17 @@
-   { id: "browser.urlbar.suggest.topsites", type: "bool" },
-   { id: "browser.urlbar.suggest.engines", type: "bool" },
+diff --git a/browser/components/preferences/privacy.js b/browser/components/preferences/privacy.js
+index 5722057a0665..3d825f40fa3b 100644
+--- a/browser/components/preferences/privacy.js
++++ b/browser/components/preferences/privacy.js
+@@ -156,6 +156,16 @@ Preferences.addAll([
+   { id: "browser.urlbar.suggest.quicksuggest.sponsored", type: "bool" },
+   { id: "browser.urlbar.quicksuggest.dataCollection.enabled", type: "bool" },
  
 +  // IceCat-specific
 +  { id: "javascript.enabled", type: "bool" },
 +  { id: "browser.display.use_document_fonts", type: "int" },
 +  { id: "extensions.update.enabled", type: "bool" },
 +  { id: "network.http.referer.spoofSource", type: "bool" },
-+  { id: "privacy.resistFingerprinting", type: "bool" },
 +  { id: "webgl.disabled", type: "bool" },
 +  { id: "network.captive-portal-service.enabled", type: "bool" },
 +  { id: "network.connectivity-service.enabled", type: "bool" },
@@ -104,7 +162,7 @@
    // History
    { id: "places.history.enabled", type: "bool" },
    { id: "browser.formfill.enable", type: "bool" },
-@@ -706,6 +716,24 @@
+@@ -1150,6 +1160,24 @@ var gPrivacyPane = {
      setSyncFromPrefListener("enableOCSP", () => this.readEnableOCSP());
      setSyncToPrefListener("enableOCSP", () => this.writeEnableOCSP());
  
@@ -129,7 +187,7 @@
      if (AlertsServiceDND) {
        let notificationsDoNotDisturbBox = document.getElementById(
          "notificationsDoNotDisturbBox"
-@@ -825,6 +850,62 @@
+@@ -1259,6 +1287,62 @@ var gPrivacyPane = {
      SiteDataManager.updateSites();
    },
  
@@ -192,30 +250,3 @@
    // CONTENT BLOCKING
  
    /**
-diff -ru icecat-91.13.0/browser/base/content/appmenu-viewcache.inc.xhtml icecat-91.13.0.orig/browser/base/content/appmenu-viewcache.inc.xhtml
---- icecat-91.13.0/browser/base/content/appmenu-viewcache.inc.xhtml	2022-08-30 20:57:37.511721105 -0400
-+++ icecat-91.13.0.orig/browser/base/content/appmenu-viewcache.inc.xhtml	2022-08-30 20:52:39.076545425 -0400
-@@ -336,6 +336,10 @@
-                      key="key_preferencesCmdMac"
- #endif
-                      />
-+      <toolbarbutton id="appMenu-icecatsettings-button"
-+                     class="subviewbutton"
-+                     data-l10n-id="appmenuitem-icecat-settings"
-+                     oncommand="switchToTabHavingURI('about:preferences#privacy-icecatPreferences', true)"/>
-       <toolbarbutton id="appMenu-more-button2"
-                      class="subviewbutton subviewbutton-nav"
-                      data-l10n-id="appmenuitem-more-tools"
-diff -ru icecat-91.13.0.orig/browser/base/content/browser-menubar.inc icecat-91.13.0/browser/base/content/browser-menubar.inc
---- icecat-91.13.0.orig/browser/base/content/browser-menubar.inc	2022-08-30 21:06:25.143226477 -0400
-+++ icecat-91.13.0/browser/base/content/browser-menubar.inc	2022-08-30 21:06:10.103469430 -0400
-@@ -139,6 +139,9 @@
-                         />
- #endif
- #endif
-+              <menuitem id="menu_icecat_preferences"
-+	          oncommand="switchToTabHavingURI('about:preferences#privacy-icecatPreferences', true)"
-+	          data-l10n-id="appmenuitem-icecat-settings"/>
-               </menupopup>
-             </menu>
- 
