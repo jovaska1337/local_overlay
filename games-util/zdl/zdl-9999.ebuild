@@ -1,4 +1,4 @@
-EAPI=7
+EAPI=8
 
 inherit cmake desktop xdg
 
@@ -19,14 +19,10 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE="+desktop-entry"
 
-# FIXME: allow to compile with qt5 or qt6 somehow
-# -> not sure if build system allows of to pick...
 DEPEND="
 	|| (
-		|| (
-			dev-qt/qtgui:5
-			dev-qt/qtwidgets:5
-		)
+		dev-qt/qtcore:6
+		dev-qt/qtwidgets:6
 		dev-qt/qtbase:6
 	)
 	>=dev-libs/inih-53"
@@ -37,12 +33,12 @@ BDEPEND="
 RDEPEND="${DEPEND}"
 
 PATCHES=(
-	# this is now merged into master
-	#"${FILESDIR}/enable_file_selection.patch"
 	"${FILESDIR}/shared_inih_and_install_target.patch"
 )
 
 src_prepare() {
+	# force Qt 6
+	sed -i s/Qt5//g ${S}/CMakeLists.txt || die
 	cmake_src_prepare
 }
 
