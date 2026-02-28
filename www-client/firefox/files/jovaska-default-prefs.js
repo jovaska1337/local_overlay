@@ -319,7 +319,7 @@ pref("network.dnsCacheExpiration", 60);
 //pref("network.http.altsvc.oe", false);
 //pref("network.http.keep-alive.timeout", 15);
 pref("network.http.redirection-limit", 10);
-pref("network.http.referer.XOriginPolicy", 2);
+//pref("network.http.referer.XOriginPolicy", 2);
 pref("network.http.referer.XOriginTrimmingPolicy", 2);
 pref("network.http.referer.defaultPolicy", 3);
 pref("network.http.referer.defaultPolicy.pbmode", 2);
