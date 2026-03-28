@@ -1,0 +1,101 @@
+--- a/src/common/types.h
++++ b/src/common/types.h
+@@ -7,6 +7,12 @@
+ #include <cstdint>
+ #include <cstring>
+ #include <limits>
++#include <functional>
++#include <span>
++#include <utility>
++#include <optional>
++#include <string_view>
++#include <unordered_map>
+ #include <type_traits>
+ 
+ // Force inline helper
+--- a/src/util/compress_helpers.h
++++ b/src/util/compress_helpers.h
+@@ -4,6 +4,7 @@
+ #pragma once
+ 
+ #include "common/heap_array.h"
++#include "common/types.h"
+ 
+ #include <optional>
+ #include <span>
+--- a/src/core/gdb_server.h
++++ b/src/core/gdb_server.h
+@@ -3,6 +3,7 @@
+
+ #pragma once
+ #include <string_view>
++#include "common/types.h"
+ 
+ namespace GDBServer {
+ bool Initialize(u16 port);
+--- a/src/core/memory_card_image.h
++++ b/src/core/memory_card_image.h
+@@ -4,11 +4,11 @@
+ #pragma once
+ 
+ #include <array>
+-#include <span>
+ #include <string>
+-#include <string_view>
+ #include <vector>
+ 
++#include "common/types.h"
++
+ class Error;
+ 
+ namespace MemoryCardImage {
+--- a/src/duckstation-qt/qthost.cpp
++++ b/src/duckstation-qt/qthost.cpp
+@@ -72,6 +72,7 @@
+ #include <cstdio>
+ #include <cstdlib>
+ #include <memory>
++#include <QResource>
+ 
+ LOG_CHANNEL(Host);
+ 
+--- a/src/duckstation-qt/gamesummarywidget.cpp
++++ b/src/duckstation-qt/gamesummarywidget.cpp
+@@ -24,6 +24,7 @@
+ #include <QtWidgets/QDialogButtonBox>
+ #include <QtWidgets/QMessageBox>
+ #include <QtWidgets/QTextBrowser>
++#include <QTimeZone>
+ 
+ GameSummaryWidget::GameSummaryWidget(const std::string& path, const std::string& serial, DiscRegion region,
+                                      const GameDatabase::Entry* entry, SettingsWindow* dialog, QWidget* parent)
+--- a/src/duckstation-qt/gamelistwidget.cpp
++++ b/src/duckstation-qt/gamelistwidget.cpp
+@@ -32,6 +32,7 @@
+ #include <QtWidgets/QScrollBar>
+ #include <QtWidgets/QStyledItemDelegate>
+ #include <algorithm>
++#include <QTimeZone>
+ 
+ LOG_CHANNEL(GameList);
+ 
+--- a/src/duckstation-qt/gamecheatsettingswidget.h
++++ b/src/duckstation-qt/gamecheatsettingswidget.h
+@@ -14,6 +14,7 @@
+ #include <QtCore/QStringList>
+ #include <QtWidgets/QDialog>
+ #include <QtWidgets/QWidget>
++#include <QSortFilterProxyModel>
+ 
+ #include <string>
+ #include <string_view>
+--- a/src/duckstation-qt/qthost.h
++++ b/src/duckstation-qt/qthost.h
+@@ -23,6 +23,7 @@
+ #include <QtCore/QString>
+ #include <QtCore/QThread>
+ #include <QtGui/QIcon>
++#include <QAbstractListModel>
+ 
+ #include <atomic>
+ #include <functional>

@@ -174,7 +174,7 @@ COMMON_DEPEND="${FF_ONLY_DEPEND}
 		>=media-libs/harfbuzz-2.8.1:0=
 		!wasm-sandbox? ( >=media-gfx/graphite2-1.3.13 )
 	)
-	system-icu? ( >=dev-libs/icu-76.1:= )
+	system-icu? ( >=dev-libs/icu-78.1:= )
 	system-jpeg? ( >=media-libs/libjpeg-turbo-1.2.1:= )
 	system-libevent? ( >=dev-libs/libevent-2.1.12:0=[threads(+)] )
 	system-libvpx? ( >=media-libs/libvpx-1.8.2:0=[postproc] )
@@ -603,6 +603,9 @@ src_prepare() {
 	eapply "${WORKDIR}/firefox-patches"
 	use loong && eapply "${WORKDIR}/firefox-loong-patches"
 
+	# jovaska: support ICU 78
+	eapply "${FILESDIR}/patches/firefox-icu-78-support.patch"
+
 	###########################################################################
 
 	# jovaska: apply patches from GNU IceCat
@@ -722,6 +725,9 @@ src_prepare() {
 
 		# OpenSUSE gconf proxy fix
 		eapply "${FILESDIR}/patches/$(ver_cut 1)-no-gconf-proxy.patch"
+
+		# patch to hide automation status
+		eapply "${FILESDIR}/patches/firefox-hide-automation.patch"
 	fi
 
 	###########################################################################

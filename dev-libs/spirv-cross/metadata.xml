@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+<maintainer type="project">
+	<name>jovaska</name>
+</maintainer>
+<use>
+	<flag name="shared">Build shared libraries</flag>
+	<flag name="static">Build static libraries</flag>
+	<flag name="tools">Build CLI tools</flag>
+</use>
+</pkgmetadata>

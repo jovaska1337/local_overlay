@@ -1,0 +1,22 @@
+--- a/src/util/audio_stream.cpp
++++ b/src/util/audio_stream.cpp
+@@ -13,7 +13,7 @@
+ #include "common/timer.h"
+ 
+ #include "soundtouch/SoundTouch.h"
+-#include "soundtouch/SoundTouchDLL.h"
++#include "SoundTouchDLL.h" // for some reason this is not in the folder...
+ 
+ #include <algorithm>
+ #include <cmath>
+--- a/src/util/CMakeLists.txt
++++ b/src/util/CMakeLists.txt
+@@ -73,6 +73,8 @@
+   window_info.h
+ )
+ 
++add_compile_definitions(ST_NO_EXCEPTION_HANDLING=1)
++
+ target_precompile_headers(util PRIVATE "pch.h")
+ target_include_directories(util PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+ target_include_directories(util PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")

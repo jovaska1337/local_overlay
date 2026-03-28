@@ -1,0 +1,28 @@
+--- a/dom/base/Navigator.cpp
++++ b/dom/base/Navigator.cpp
+@@ -2295,6 +2295,13 @@
+ /* static */
+ bool Navigator::Webdriver() {
+ #ifdef ENABLE_WEBDRIVER
++  // dom.hide-automation = true, always report navigator.webdriver as false
++  bool hideAutomation = Preferences::GetBool("dom.hide-automation", false);
++  if (hideAutomation) {
++    return false;
++  }
++
++
+   nsCOMPtr<nsIMarionette> marionette = do_GetService(NS_MARIONETTE_CONTRACTID);
+   if (marionette) {
+     bool marionetteRunning = false;
+--- a/browser/app/profile/firefox.js
++++ b/browser/app/profile/firefox.js
+@@ -23,6 +23,9 @@
+   pref("browser.hiddenWindowChromeURL", "chrome://browser/content/hiddenWindowMac.xhtml");
+ #endif
+ 
++// Makes navigator.webdriver always report false
++pref("dom.hide-automation", false);
++
+ // Set add-ons abuse report related prefs specific to Firefox Desktop.
+ pref("extensions.abuseReport.enabled", true);
+ 

@@ -23,13 +23,14 @@ DEPEND="
 	kde-plasma/libplasma:6
 	kde-frameworks/kdeclarative:6
 	kde-frameworks/kcoreaddons:6
+	kde-frameworks/kconfig:6
 	kde-plasma/kdecoration:6
 "
 RDEPEND="${DEPEND}"
 
 #DOCS=( README.md )
 
-#PATCHES=( "${FILESDIR}/kdecoration3.patch" )
+PATCHES=( "${FILESDIR}/plasma-6.6-fix.patch" )
 
 src_unpack()
 {

@@ -1,0 +1,172 @@
+--- a/CMakeModules/DuckStationDependencies.cmake
++++ b/CMakeModules/DuckStationDependencies.cmake
+@@ -18,7 +18,6 @@
+ find_package(Freetype 2.13.2 REQUIRED) # 2.13.3, but flatpak is still on 2.13.2.
+ find_package(plutosvg 0.0.6 REQUIRED)
+ find_package(cpuinfo REQUIRED)
+-find_package(DiscordRPC 3.4.0 REQUIRED)
+ find_package(SoundTouch 2.3.3 REQUIRED)
+ find_package(libzip 1.11.1 REQUIRED)
+ 
+--- a/src/core/system.cpp
++++ b/src/core/system.cpp
+@@ -95,7 +95,6 @@
+ #endif
+ 
+ #ifndef __ANDROID__
+-#define ENABLE_DISCORD_PRESENCE 1
+ #define ENABLE_GDB_SERVER 1
+ #define ENABLE_SOCKET_MULTIPLEXER 1
+ #include "gdb_server.h"
+--- a/src/duckstation-qt/aboutdialog.cpp
++++ b/src/duckstation-qt/aboutdialog.cpp
+@@ -40,7 +40,7 @@
+ <p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">  Connor McLaughlin &lt;stenzek@gmail.com&gt;</p>
+ <p style=" margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">  and other <a href="https://github.com/stenzek/duckstation/blob/master/CONTRIBUTORS.md">contributors</a></p>
+ <p style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">%3 <a href="https://icons8.com/icon/74847/platforms.undefined.short-title"><span style=" text-decoration: underline; color:#0057ae;">icons8</span></a></p>
+-<p style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><a href="https://github.com/stenzek/duckstation/blob/master/LICENSE"><span style=" text-decoration: underline; color:#0057ae;">%4</span></a> | <a href="https://github.com/stenzek/duckstation"><span style=" text-decoration: underline; color:#0057ae;">GitHub</span></a> | <a href="https://www.duckstation.org/discord.html"><span style=" text-decoration: underline; color:#0057ae;">Discord</span></a></p></body></html>
++<p style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><a href="https://github.com/stenzek/duckstation/blob/master/LICENSE"><span style=" text-decoration: underline; color:#0057ae;">%4</span></a> | <a href="https://github.com/stenzek/duckstation"><span style=" text-decoration: underline; color:#0057ae;">GitHub</span></a></p></body></html>
+ )")
+                               .arg(tr("DuckStation is a free simulator/emulator of the Sony PlayStation<span "
+                                       "style=\"vertical-align:super;\">TM</span> console, focusing on playability, "
+--- a/src/duckstation-qt/mainwindow.ui
++++ b/src/duckstation-qt/mainwindow.ui
+@@ -121,7 +121,6 @@
+      <string>&amp;Help</string>
+     </property>
+     <addaction name="actionGitHubRepository"/>
+-    <addaction name="actionDiscordServer"/>
+     <addaction name="separator"/>
+     <addaction name="actionCheckForUpdates"/>
+     <addaction name="separator"/>
+@@ -438,15 +437,6 @@
+     <string>&amp;GitHub Repository...</string>
+    </property>
+   </action>
+-  <action name="actionDiscordServer">
+-   <property name="icon">
+-    <iconset resource="resources/duckstation-qt.qrc">
+-     <normaloff>:/icons/discord.png</normaloff>:/icons/discord.png</iconset>
+-   </property>
+-   <property name="text">
+-    <string>&amp;Discord Server...</string>
+-   </property>
+-  </action>
+   <action name="actionCheckForUpdates">
+    <property name="icon">
+     <iconset theme="download-2-line"/>
+--- a/src/duckstation-qt/resources/duckstation-qt.qrc
++++ b/src/duckstation-qt/resources/duckstation-qt.qrc
+@@ -129,7 +129,6 @@
+ 		<file>icons/debug-step-out.png</file>
+ 		<file>icons/debug-step-over.png</file>
+ 		<file>icons/debug-trace.png</file>
+-		<file>icons/discord.png</file>
+ 		<file>icons/document-new@2x.png</file>
+ 		<file>icons/document-new.png</file>
+ 		<file>icons/document-open@2x.png</file>
+--- a/src/core/fullscreen_ui.cpp
++++ b/src/core/fullscreen_ui.cpp
+@@ -4271,9 +4271,6 @@
+   DrawToggleSetting(bsi, FSUI_ICONVSTR(ICON_FA_FILE_EXPORT, "Create Save State Backups"),
+                     FSUI_VSTR("Renames existing save states when saving to a backup file."), "Main",
+                     "CreateSaveStateBackups", false);
+-  DrawToggleSetting(bsi, FSUI_ICONVSTR(ICON_FA_CHARGING_STATION, "Enable Discord Presence"),
+-                    FSUI_VSTR("Shows the game you are currently playing as part of your profile in Discord."), "Main",
+-                    "EnableDiscordPresence", false);
+ 
+   MenuHeading(FSUI_VSTR("Game Display"));
+ 
+@@ -8725,8 +8722,6 @@
+   BeginMenuButtons();
+   if (MenuButtonWithoutSummary(FSUI_ICONVSTR(ICON_FA_GLOBE, "GitHub Repository")))
+     ExitFullscreenAndOpenURL("https://github.com/stenzek/duckstation/");
+-  if (MenuButtonWithoutSummary(FSUI_ICONVSTR(ICON_FA_COMMENT, "Discord Server")))
+-    ExitFullscreenAndOpenURL("https://www.duckstation.org/discord.html");
+   if (MenuButtonWithoutSummary(FSUI_ICONVSTR(ICON_FA_PEOPLE_CARRY, "Contributor List")))
+     ExitFullscreenAndOpenURL("https://github.com/stenzek/duckstation/blob/master/CONTRIBUTORS.md");
+ 
+@@ -9298,7 +9293,6 @@
+ TRANSLATE_NOOP("FullscreenUI", "Disable on 2D Polygons");
+ TRANSLATE_NOOP("FullscreenUI", "Disabled");
+ TRANSLATE_NOOP("FullscreenUI", "Disc");
+-TRANSLATE_NOOP("FullscreenUI", "Discord Server");
+ TRANSLATE_NOOP("FullscreenUI", "Display Area");
+ TRANSLATE_NOOP("FullscreenUI", "Displays DualShock/DualSense button icons in the footer and input binding, instead of Xbox buttons.");
+ TRANSLATE_NOOP("FullscreenUI", "Displays popup messages on events such as achievement unlocks and leaderboard submissions.");
+@@ -9320,7 +9314,6 @@
+ TRANSLATE_NOOP("FullscreenUI", "Enable 8MB RAM");
+ TRANSLATE_NOOP("FullscreenUI", "Enable Achievements");
+ TRANSLATE_NOOP("FullscreenUI", "Enable Cheats");
+-TRANSLATE_NOOP("FullscreenUI", "Enable Discord Presence");
+ TRANSLATE_NOOP("FullscreenUI", "Enable Fast Boot");
+ TRANSLATE_NOOP("FullscreenUI", "Enable GPU-Based Validation");
+ TRANSLATE_NOOP("FullscreenUI", "Enable GPU-based validation when supported by the host's renderer API. Only for developer use.");
+@@ -9707,7 +9700,6 @@
+ TRANSLATE_NOOP("FullscreenUI", "Shows the current controller state of the system in the bottom-left corner of the display.");
+ TRANSLATE_NOOP("FullscreenUI", "Shows the current emulation speed of the system in the top-right corner of the display as a percentage.");
+ TRANSLATE_NOOP("FullscreenUI", "Shows the current rendering resolution of the system in the top-right corner of the display.");
+-TRANSLATE_NOOP("FullscreenUI", "Shows the game you are currently playing as part of your profile in Discord.");
+ TRANSLATE_NOOP("FullscreenUI", "Shows the host's CPU usage of each system thread in the top-right corner of the display.");
+ TRANSLATE_NOOP("FullscreenUI", "Shows the host's GPU usage in the top-right corner of the display.");
+ TRANSLATE_NOOP("FullscreenUI", "Shows the number of frames (or v-syncs) displayed per second by the system in the top-right corner of the display.");
+--- a/src/core/settings.h
++++ b/src/core/settings.h
+@@ -299,7 +299,6 @@
+   bool apply_compatibility_settings : 1 = true;
+   bool apply_game_settings : 1 = true;
+   bool disable_all_enhancements : 1 = false;
+-  bool enable_discord_presence : 1 = false;
+ 
+   bool rewind_enable : 1 = false;
+ 
+--- a/src/core/settings.cpp
++++ b/src/core/settings.cpp
+@@ -188,7 +188,6 @@
+   apply_compatibility_settings = si.GetBoolValue("Main", "ApplyCompatibilitySettings", true);
+   apply_game_settings = si.GetBoolValue("Main", "ApplyGameSettings", true);
+   disable_all_enhancements = si.GetBoolValue("Main", "DisableAllEnhancements", false);
+-  enable_discord_presence = si.GetBoolValue("Main", "EnableDiscordPresence", false);
+   rewind_enable = si.GetBoolValue("Main", "RewindEnable", false);
+   rewind_save_frequency = si.GetFloatValue("Main", "RewindFrequency", 10.0f);
+   rewind_save_slots = static_cast<u16>(std::min(si.GetUIntValue("Main", "RewindSaveSlots", 10u), 65535u));
+@@ -556,7 +555,6 @@
+     si.SetBoolValue("Main", "CreateSaveStateBackups", create_save_state_backups);
+     si.SetStringValue("Main", "SaveStateCompression", GetSaveStateCompressionModeName(save_state_compression));
+     si.SetBoolValue("Main", "ConfirmPowerOff", confim_power_off);
+-    si.SetBoolValue("Main", "EnableDiscordPresence", enable_discord_presence);
+   }
+ 
+   si.SetBoolValue("Main", "LoadDevicesFromSaveStates", load_devices_from_save_states);
+--- a/src/duckstation-qt/mainwindow.h
++++ b/src/duckstation-qt/mainwindow.h
+@@ -190,7 +190,6 @@
+   void onViewGameGridZoomOutActionTriggered();
+   void onGitHubRepositoryActionTriggered();
+   void onIssueTrackerActionTriggered();
+-  void onDiscordServerActionTriggered();
+   void onAboutActionTriggered();
+   void onCheckForUpdatesActionTriggered();
+   void onToolsMemoryCardEditorTriggered();
+--- a/src/duckstation-qt/mainwindow.cpp
++++ b/src/duckstation-qt/mainwindow.cpp
+@@ -1355,11 +1355,6 @@
+   QtUtils::OpenURL(this, "https://www.duckstation.org/issues.html");
+ }
+ 
+-void MainWindow::onDiscordServerActionTriggered()
+-{
+-  QtUtils::OpenURL(this, "https://www.duckstation.org/discord.html");
+-}
+-
+ void MainWindow::onAboutActionTriggered()
+ {
+   AboutDialog about(this);
+@@ -2089,7 +2084,6 @@
+   connect(m_ui.actionViewSystemDisplay, &QAction::triggered, this, &MainWindow::onViewSystemDisplayTriggered);
+   connect(m_ui.actionViewGameProperties, &QAction::triggered, this, [this]() { openGamePropertiesForCurrentGame(); });
+   connect(m_ui.actionGitHubRepository, &QAction::triggered, this, &MainWindow::onGitHubRepositoryActionTriggered);
+-  connect(m_ui.actionDiscordServer, &QAction::triggered, this, &MainWindow::onDiscordServerActionTriggered);
+   connect(m_ui.actionViewThirdPartyNotices, &QAction::triggered, this,
+           [this]() { AboutDialog::showThirdPartyNotices(this); });
+   connect(m_ui.actionAboutQt, &QAction::triggered, qApp, &QApplication::aboutQt);

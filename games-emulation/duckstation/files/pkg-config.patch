@@ -1,0 +1,73 @@
+--- a/CMakeModules/DuckStationDependencies.cmake
++++ b/CMakeModules/DuckStationDependencies.cmake
+@@ -9,6 +9,8 @@
+ set(THREADS_PREFER_PTHREAD_FLAG ON)
+ find_package(Threads REQUIRED)
+ 
++find_package(PkgConfig REQUIRED)
++
+ find_package(SDL3 3.2.16 REQUIRED)
+ find_package(zstd 1.5.7 REQUIRED)
+ find_package(WebP REQUIRED) # v1.4.0, spews an error on Linux because no pkg-config.
+@@ -16,9 +18,9 @@
+ find_package(PNG 1.6.40 REQUIRED) # 1.6.48, but Fedora is out of date.
+ find_package(JPEG REQUIRED)
+ find_package(Freetype 2.13.2 REQUIRED) # 2.13.3, but flatpak is still on 2.13.2.
+-find_package(plutosvg 0.0.6 REQUIRED)
++pkg_check_modules(PLUTOSVG REQUIRED plutosvg>=0.0.6)
+ find_package(cpuinfo REQUIRED)
+-find_package(SoundTouch 2.3.3 REQUIRED)
++pkg_check_modules(SOUNDTOUCH REQUIRED soundtouch>=2.3.3)
+ find_package(libzip 1.11.1 REQUIRED)
+ 
+ if(NOT WIN32)
+@@ -42,7 +44,7 @@
+   find_package(Qt6 6.9.0 COMPONENTS Core Gui Widgets LinguistTools REQUIRED) # 6.9.1, but flatpak stuck on 6.9.0.
+ endif()
+ 
+-find_package(Shaderc REQUIRED)
++pkg_check_modules(SHADERC REQUIRED shaderc)
+ find_package(spirv_cross_c_shared REQUIRED)
+ 
+ if(LINUX AND NOT (ALLOW_INSTALL AND INSTALL_SELF_CONTAINED))
+@@ -49,8 +49,7 @@
+ 
+ if(LINUX AND NOT (ALLOW_INSTALL AND INSTALL_SELF_CONTAINED))
+   # We need to add the rpath for shaderc to the executable.
+-  get_target_property(SHADERC_LIBRARY Shaderc::shaderc_shared IMPORTED_LOCATION)
+-  get_filename_component(SHADERC_LIBRARY_DIRECTORY ${SHADERC_LIBRARY} DIRECTORY)
++  get_filename_component(SHADERC_LIBRARY_DIRECTORY ${SHADERC_LINK_LIBRARIES} DIRECTORY)
+   list(APPEND CMAKE_BUILD_RPATH ${SHADERC_LIBRARY_DIRECTORY})
+   get_target_property(SPIRV_CROSS_LIBRARY spirv-cross-c-shared IMPORTED_LOCATION)
+   get_filename_component(SPIRV_CROSS_LIBRARY_DIRECTORY ${SPIRV_CROSS_LIBRARY} DIRECTORY)
+--- a/dep/imgui/CMakeLists.txt
++++ b/dep/imgui/CMakeLists.txt
+@@ -19,4 +19,5 @@
+ add_library(imgui ${SRCS})
+ target_include_directories(imgui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+ target_include_directories(imgui INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
++target_include_directories(imgui PRIVATE ${PLUTOSVG_INCLUDE_DIRS})
+-target_link_libraries(imgui PUBLIC Freetype::Freetype plutosvg::plutosvg)
++target_link_libraries(imgui PUBLIC Freetype::Freetype ${PLUTOSVG_LIBRARIES})
+--- a/src/util/CMakeLists.txt
++++ b/src/util/CMakeLists.txt
+@@ -77,7 +77,9 @@
+ target_include_directories(util PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+ target_include_directories(util PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
+ target_link_libraries(util PUBLIC common simpleini imgui)
++target_include_directories(util PRIVATE ${PLUTOSVG_INCLUDE_DIRS})
++target_include_directories(util PRIVATE ${SOUNDTOUCH_INCLUDE_DIRS})
+-target_link_libraries(util PRIVATE libchdr lzma JPEG::JPEG PNG::PNG WebP::libwebp plutosvg::plutosvg ZLIB::ZLIB SoundTouch::SoundTouchDLL xxhash zstd::libzstd_shared reshadefx)
++target_link_libraries(util PRIVATE libchdr lzma JPEG::JPEG PNG::PNG WebP::libwebp ${PLUTOSVG_LIBRARIES} ZLIB::ZLIB ${SOUNDTOUCH_LIBRARIES} ${SOUNDTOUCH_LIBRARIES}Dll xxhash zstd::libzstd_shared reshadefx)
+ 
+ if(ENABLE_X11)
+   target_sources(util PRIVATE
+@@ -179,7 +179,7 @@
+ endif()
+ 
+ # shaderc/spirv-cross is loaded dynamically to reduce module loads on startup.
+-get_target_property(SHADERC_INCLUDE_DIR Shaderc::shaderc_shared INTERFACE_INCLUDE_DIRECTORIES)
++set(SHADERC_INCLUDE_DIR ${SHADERC_INCLUDE_DIRS})
+ get_target_property(SPIRV_CROSS_INCLUDE_DIR spirv-cross-c-shared INTERFACE_INCLUDE_DIRECTORIES)
+ target_include_directories(util PUBLIC ${SHADERC_INCLUDE_DIR} ${SPIRV_CROSS_INCLUDE_DIR})
+ 
