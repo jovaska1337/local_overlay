@@ -13,8 +13,7 @@ RESTRICT="mirror"
 
 inherit ecm
 
-# currently all changes are in kf6 instead of master!
-EGIT_BRANCH="fix-plugins"
+EGIT_BRANCH="plugin-ext"
 
 DESCRIPTION="Network-enabled resource usage monitor"
 HOMEPAGE="https://apps.kde.org/ksysguard/ https://userbase.kde.org/KSysGuard"

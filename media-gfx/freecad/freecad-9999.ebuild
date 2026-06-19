@@ -561,7 +561,7 @@ src_install() {
 	done
 
 	rm -r "${ED}/usr/$(get_libdir)/${PN}/include/E57Format" || die "failed to drop unneeded include directory E57Format"
-	rmdir "${ED}/usr/$(get_libdir)/${PN}/include/" || die "failed to drop unneeded include directory"
+	rm -r "${ED}/usr/$(get_libdir)/${PN}/include/" || die "failed to drop unneeded include directory"
 
 	python_optimize "${ED}/usr/share/${PN}/data/Mod/Start/" "${ED}/usr/$(get_libdir)/${PN}/"{Ext,Mod}/
 	# compile main package in python site-packages as well
