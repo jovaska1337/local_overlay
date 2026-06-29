@@ -20,9 +20,14 @@ DEPEND="${RDEPEND}"
 
 PREFIX="${EPREFIX}/usr"
 
+src_prepare() {
+	eapply "${FILESDIR}/fix-cflags.patch" || die
+	eapply_user
+}
+
 src_compile() {
 	# force minipro to use portage prefix
-	emake PREFIX="${PREFIX}"
+	emake PREFIX="${PREFIX}" CFLAGS="${CFLAGS} -std=gnu99"
 }
 
 src_install() {

@@ -1,0 +1,19 @@
+--- a/Makefile
++++ b/Makefile
+@@ -5,7 +5,7 @@
+ #CC=clang
+ 
+ # Compiler options
+-CFLAGS = -g -O0 -Wall -DSHARE_INSTDIR="\"$(SHARE_INSTDIR)\""
++CFLAGS ?= -g -O0 -Wall
+ 
+ # Normally minipro is installed to /usr/local.  If you want to put it
+ # somewhere else, define that location here.
+@@ -93,6 +93,7 @@
+                  -lwinusb
+ endif
+ 
++override CFLAGS += -DSHARE_INSTDIR="\"$(SHARE_INSTDIR)\""
+ 
+ all: $(PROGS)
+ 
