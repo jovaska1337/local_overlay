@@ -136,10 +136,10 @@ BDEPEND="
 "
 
 PATCHES=(
-	"${FILESDIR}"/${PN}-9999-Gentoo-specific-don-t-check-vcs.patch
-	"${FILESDIR}"/${PN}-9999-tests-src-Qt-only-build-test-for-BUILD_GUI-ON.patch
-	"${FILESDIR}/${PN}-1.0.0-r4-error-cannot-convert-bool-to-App-DocumentInitFlags.patch"
-	"${FILESDIR}/${PN}-1.0.2-pybind11-latent-slots-macro-conflicts-with-Qt.patch" # fixed in pybind-3.0.1
+	#"${FILESDIR}"/${PN}-9999-Gentoo-specific-don-t-check-vcs.patch
+	#"${FILESDIR}"/${PN}-9999-tests-src-Qt-only-build-test-for-BUILD_GUI-ON.patch
+	#"${FILESDIR}/${PN}-1.0.0-r4-error-cannot-convert-bool-to-App-DocumentInitFlags.patch"
+	#"${FILESDIR}/${PN}-1.0.2-pybind11-latent-slots-macro-conflicts-with-Qt.patch" # fixed in pybind-3.0.1
 )
 
 DOCS=( CODE_OF_CONDUCT.md README.md )
@@ -360,6 +360,7 @@ src_configure() {
 		-DFREECAD_USE_EXTERNAL_ZIPIOS=OFF		# doesn't work yet, also no package in Gentoo tree
 		-DFREECAD_USE_EXTERNAL_FMT="yes"
 		-DFREECAD_USE_EXTERNAL_KDL=OFF # https://github.com/FreeCAD/FreeCAD/commit/9f98866
+		-DFREECAD_USE_EXTERNAL_COIN_PIVY="yes"
 		-DFREECAD_USE_FREETYPE=ON
 		-DFREECAD_USE_OCC_VARIANT:STRING="Official Version"
 		-DFREECAD_USE_PCL=$(usex pcl)
