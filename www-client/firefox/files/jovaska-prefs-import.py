@@ -12,7 +12,7 @@ class Pref:
 
     def __init__(self, m):
         self.off = m.group(1) == "//"
-        self.key = m.group(3).lower()
+        self.key = m.group(3)
         self.val = m.group(4)
 
     def __repr__(self):
