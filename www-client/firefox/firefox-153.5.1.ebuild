@@ -79,7 +79,7 @@ IUSE+=" +system-av1 +system-harfbuzz +system-icu +system-jpeg +system-libevent +
 IUSE+=" system-pipewire system-png +system-webp test wayland wifi +X"
 
 # Firefox-only IUSE
-IUSE+=" +gmp-autoupdate gnome-shell jpegxl +jumbo-build openh264 +telemetry valgrind wasm-sandbox"
+IUSE+=" gmp-autoupdate gnome-shell +jpegxl +jumbo-build openh264 +telemetry valgrind wasm-sandbox"
 
 ###############################################################################
 
