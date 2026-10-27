@@ -1479,7 +1479,7 @@ pkg_postinst() {
 		elog
 	fi
 
-	readme.gentoo_print_elog
+	#readme.gentoo_print_elog
 
 	optfeature_header "Optional programs for extra features:"
 	optfeature "desktop notifications" x11-libs/libnotify
