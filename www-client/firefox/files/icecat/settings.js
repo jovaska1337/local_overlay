@@ -1,5 +1,3 @@
-#filter dumbComments emptyLines substitution
-
 // Default name strings
 pref ("distribution.about", "Mozilla Firefox");
 pref ("distribution.id", "jovaska");
@@ -14,6 +12,9 @@ pref("app.privacyURL", "http://www.gnu.org/software/gnuzilla/");
 pref("plugins.hide_infobar_for_missing_plugin", true);
 pref("plugins.hide_infobar_for_outdated_plugin", true);
 pref("plugins.notifyMissingFlash", false);
+
+// Disable Settings Redesign 2025 for now
+pref("browser.settings-redesign.enabled", false);
 
 //https://developer.mozilla.org/en-US/docs/Web/API/MediaSource
 //pref("media.mediasource.enabled",true);
@@ -98,8 +99,6 @@ pref("network.protocol-handler.external.apt+http",true);
 // https://wiki.mozilla.org/Fingerprinting
 // http://www.browserleaks.com
 // http://fingerprint.pet-portal.eu
-pref("privacy.donottrackheader.enabled", true);
-pref("privacy.donottrackheader.value", 1);
 pref("dom.ipc.plugins.flash.subprocess.crashreporter.enabled", false);
 pref("browser.tabs.crashReporting.sendReport", false);
 pref("browser.safebrowsing.enabled", false);
@@ -111,8 +110,10 @@ pref("browser.safebrowsing.provider.google4.updateURL", "");
 pref("browser.safebrowsing.provider.google4.gethashURL", "");
 pref("browser.safebrowsing.provider.mozilla.gethashURL", "");
 pref("browser.safebrowsing.provider.mozilla.updateURL", "");
+pref("browser.preferences.config_warning.warningSafeBrowsing.dismissed", true);
 pref("services.sync.privacyURL", "https://www.gnu.org/software/gnuzilla/");
 pref("services.sync.syncedTabs.showRemoteIcons", false);
+pref("services.sync.engine.creditcards.available", false);
 pref("social.enabled", false);
 pref("social.remote-install.enabled", false);
 pref("datareporting.policy.dataSubmissionEnabled", false);
@@ -124,7 +125,7 @@ pref("social.toast-notifications.enabled", false);
 pref("datareporting.policy.dataSubmissionEnabled", false);
 pref("datareporting.healthreport.service.enabled", false);
 pref("browser.slowStartup.notificationDisabled", true);
-pref("signon.firefoxRelay.feature", "disabled");
+pref("signon.icecatRelay.feature", "disabled");
 pref("signon.management.page.breach-alerts.enabled", false);
 pref("signon.management.page.vulnerable-passwords.enabled", false);
 pref("network.http.sendRefererHeader", 2);
@@ -144,11 +145,19 @@ pref("toolkit.telemetry.unified", false);
 pref("toolkit.telemetry.shutdownPingSender.enabled", false);
 pref("toolkit.telemetry.firstShutdownPing.enabled", false);
 pref("toolkit.telemetry.newProfilePing.enabled", false);
+pref("toolkit.telemetry.updatePing.enabled", false);
 pref("toolkit.telemetry.bhrPing.enabled", false);
 // Make sure updater telemetry is disabled; see <https://trac.torproject.org/25909>.
 pref("toolkit.telemetry.updatePing.enabled", false);
 // Disable the targeting context telemetry.
 pref("nimbus.telemetry.targetingContextEnabled", false);
+// Disable Rollouts.
+pref("nimbus.rollouts.enabled", false);
+// Disable Normandy.
+pref("app.normandy.enabled", false);
+pref("app.shield.optoutstudies.enabled", false);
+// Disable share tab button.
+pref("browser.toolbars.share-button.enabled", true);
 // Disable BackupService
 pref("browser.backup.enabled", false);
 // Do not tell what plugins do we have enabled: https://mail.mozilla.org/pipermail/firefox-dev/2013-November/001186.html
@@ -170,18 +179,23 @@ pref("browser.urlbar.userMadeSearchSuggestionsChoice", true);
 pref("browser.urlbar.groupLabels.enabled", false);
 pref("browser.urlbar.merino.enabled", false);
 pref("browser.urlbar.suggest.addons", false);
+pref("browser.urlbar.suggest.amp", false);
 pref("browser.urlbar.suggest.fakespot", false);
 pref("browser.urlbar.suggest.mdn", false);
 pref("browser.urlbar.suggest.remotetab", false);
 pref("browser.urlbar.suggest.searches", false);
+pref("browser.urlbar.suggest.sports", false);
 pref("browser.urlbar.suggest.trending", false);
 pref("browser.urlbar.suggest.weather", false);
 pref("browser.urlbar.suggest.yelp", false);
 pref("browser.urlbar.trending.featureGate", false);
+pref("browser.urlbar.quicksuggest.enabled", false);
+pref("browser.urlbar.quicksuggest.online.enabled", false);
 pref("browser.urlbar.recentsearches.featureGate", false);
 pref("browser.urlbar.richSuggestions.featureGate", false);
 pref("browser.urlbar.showSearchTerms.enabled", false);
 pref("browser.urlbar.contextualSearch.enabled", false);
+pref("browser.urlbar.yelp.featureGate", false);
 // Always ask before restoring the browsing session
 pref("browser.sessionstore.max_resumed_crashes", 0);
 // Don't ping Mozilla for MitM detection, see <https://bugs.torproject.org/32321>
@@ -193,6 +207,7 @@ pref("extensions.shield-recipe-client.enabled", false);
 pref("browser.newtabpage.directory.source", "");
 pref("browser.newtabpage.directory.ping", "");
 pref("browser.newtabpage.introShown", true);
+pref("browser.topsites.useRemoteSetting", false);
 pref("browser.topsites.contile.enabled", false);
 pref("browser.topsites.contile.endpoint", "");
 pref("browser.topsites.contile.sov.enabled", false);
@@ -205,6 +220,10 @@ pref("privacy.trackingprotection.pbmode.enabled", true);
 pref("urlclassifier.trackingTable", "test-track-simple,base-track-digest256,content-track-digest256");
 pref("browser.privacy.trackingprotection.menu", "always");
 pref("privacy.trackingprotection.introURL", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/tracking-protection/start/");
+// Disable trust panel
+pref("browser.urlbar.trustPanel.featureGate", false);
+pref("browser.urlbar.trustPanel.breachAlerts.featureGate", false);
+pref("browser.urlbar.trustPanel.breachAlerts", false);
 // Disable geolocation
 pref("geo.enabled", false);
 pref("geo.wifi.uri", "");
@@ -223,7 +242,7 @@ pref("extensions.shield-recipe-client.enabled", false);
 // This also enables useragent spoofing
 pref("privacy.resistFingerprinting", true);
 // Set useragent to Firefox compatible (not needed, the UA is already Firefox)
-// pref("general.useragent.compatMode.firefox",true);
+// pref("general.useragent.compatMode.icecat",true);
 // Webgl can be used for fingerprinting
 pref("webgl.disabled", true);
 pref("privacy.trackingprotection.cryptomining.enabled", true);
@@ -252,16 +271,19 @@ pref("browser.partnerlink.attributionURL", "");
 pref("app.update.enabled", false);
 pref("app.update.auto", false);
 pref("app.update.staging.enabled", false);
+pref("app.update.service.enabled", false);
 pref("app.update.langpack.enabled", false);
 
-// Disable Generative AI features
+// Disable large language model (LLM) features
 pref("browser.ml.chat.enabled", false);
 pref("browser.ml.chat.shortcuts", false);
 pref("browser.ml.chat.sidebar", false);
+pref("browser.preferences.aiControls", false);
 
 // EME
 pref("media.eme.enabled", false);
 pref("media.eme.apiVisible", false);
+pref("browser.eme.ui.enabled", false);
 
 // Firefox Accounts
 pref("identity.fxaccounts.enabled", false);
@@ -435,14 +457,28 @@ pref("browser.onboarding.updatetour", "performance,library,singlesearch,customiz
 pref("browser.onboarding.enabled", false);
 
 // Disable firefox-view (renamed to icecat-view by the batch renaming)
-pref("browser.tabs.firefox-view", false);
+pref("browser.tabs.icecat-view", false);
 
 // New tab settings
 pref("browser.newtabpage.activity-stream.default.sites", "https://www.gnu.org/,https://www.fsf.org/,https://directory.fsf.org/,https://libreplanet.org/,https://trisquel.info/,https://www.wikipedia.org/,https://www.wikinews.org/");
+pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", false);
+pref("browser.newtabpage.activity-stream.unifiedAds.spocs.enabled", false);
+pref("browser.newtabpage.activity-stream.unifiedAds.endpoint", "");
+pref("browser.newtabpage.activity-stream.unifiedAds.adsFeed.enabled", false);
+pref("browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled", false);
+pref("browser.newtabpage.activity-stream.showWeather", false);
+pref("browser.newtabpage.activity-stream.discoverystream.promoCard.visible", false);
+pref("browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts", false);
+pref("browser.newtabpage.activity-stream.fxaccounts.endpoint", "");
 pref("browser.newtabpage.activity-stream.showTopSites",true);
 pref("browser.newtabpage.activity-stream.feeds.section.topstories",false);
 pref("browser.newtabpage.activity-stream.feeds.snippets",false);
 pref("browser.newtabpage.activity-stream.disableSnippets", true);
+pref("browser.newtabpage.activity-stream.asrouter.useRemoteL10n", false);
+pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", false);
+pref("browser.newtabpage.activity-stream.discoverystream.enabled", false);
+pref("browser.newtabpage.activity-stream.discoverystream.reportAds.enabled", false);
+pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", false);
 user_pref("browser.newtabpage.activity-stream.tippyTop.service.endpoint", "");
 
 // Enable xrender
@@ -456,7 +492,7 @@ pref("dom.push.enabled",false);
 // Disable recommended extensions
 pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", false);
 pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", false);
-pref("browser.newtabpage.activity-stream.asrouter.providers.snippets", "");
+pref("browser.newtabpage.activity-stream.asrouter.providers.snippets", "null");
 pref("extensions.htmlaboutaddons.discover.enabled", false);
 pref("extensions.htmlaboutaddons.recommendations.enabled", false);
 
@@ -470,9 +506,11 @@ pref("browser.region.network.url", "");
 // Disable VPN/mobile promos
 pref("browser.contentblocking.database.enabled", false);
 pref("browser.contentblocking.cfr-milestone.enabled", false);
+pref("browser.contentblocking.report.endpoint_url", "");
 pref("browser.contentblocking.report.hide_vpn_banner", true);
 pref("browser.contentblocking.report.mobile-ios.url", "");
 pref("browser.contentblocking.report.mobile-android.url", "");
+pref("browser.contentblocking.report.monitor.url", "");
 pref("browser.contentblocking.report.show_mobile_app", false);
 pref("browser.contentblocking.report.vpn.enabled", false);
 pref("browser.contentblocking.report.vpn.url", "");

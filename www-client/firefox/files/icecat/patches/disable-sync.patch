@@ -1,31 +1,31 @@
 --- a/services/settings/RemoteSettingsClient.sys.mjs
 +++ b/services/settings/RemoteSettingsClient.sys.mjs
-@@ -621,6 +621,8 @@
-    * @param {Object} options See #maybeSync() options.
+@@ -651,6 +651,8 @@
+    * @param {object} options See #maybeSync() options.
     */
    async sync(options) {
 +    return; /* Hard-disable sync */
 +
-     if (lazy.Utils.shouldSkipRemoteActivityDueToTests) {
+     if (lazy.Utils.shouldSkipRemoteActivity) {
+       lazy.console.debug(`${this.identifier} Skip remote sync.`);
        return;
-     }
 --- a/services/settings/remote-settings.sys.mjs
 +++ b/services/settings/remote-settings.sys.mjs
-@@ -209,6 +209,8 @@
+@@ -256,6 +256,8 @@
     * @throws {Error} If the signature of any bundled changeset is invalid.
     */
    remoteSettings.pullStartupBundle = async () => {
 +    return [];  /* Hard-disable pulling it */
 +
-     if (lazy.Utils.shouldSkipRemoteActivityDueToTests) {
+     if (lazy.Utils.shouldSkipRemoteActivity) {
        return [];
      }
-@@ -304,6 +306,8 @@
-     trigger = "manual",
+@@ -352,6 +354,8 @@
      full = false,
+     // eslint-disable-next-line complexity
    } = {}) => {
 +    return; /* Hard-disable polling remote settings */
 +
-     if (lazy.Utils.shouldSkipRemoteActivityDueToTests) {
+     if (lazy.Utils.shouldSkipRemoteActivity) {
        return;
      }

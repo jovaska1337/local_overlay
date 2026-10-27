@@ -1,25 +1,27 @@
---- a/toolkit/mozapps/extensions/content/aboutaddons.html
-+++ b/toolkit/mozapps/extensions/content/aboutaddons.html
-@@ -201,12 +201,12 @@
-     <template name="addon-page-header">
-       <div class="sticky-container">
-         <div class="main-search">
--          <label
-+          <label hidden="true"
-             for="search-addons"
-             class="search-label"
-             data-l10n-id="default-heading-search-label"
-           ></label>
--          <search-addons></search-addons>
-+          <search-addons hidden="true"></search-addons>
+--- a/toolkit/mozapps/extensions/content/components/addon-page-header.mjs
++++ b/toolkit/mozapps/extensions/content/components/addon-page-header.mjs
+@@ -10,12 +10,12 @@
+       <template>
+         <div class="sticky-container">
+           <div class="main-search">
+-            <label
++            <label hidden="true"
+               for="search-addons"
+               class="search-label"
+               data-l10n-id="default-heading-search-label"
+             ></label>
+-            <search-addons></search-addons>
++            <search-addons hidden="true"></search-addons>
+           </div>
+           <div class="main-heading">
+             <moz-button
+--- a/toolkit/mozapps/extensions/content/components/recommended-footer.mjs
++++ b/toolkit/mozapps/extensions/content/components/recommended-footer.mjs
+@@ -19,6 +19,7 @@
          </div>
-         <div class="main-heading">
-           <button
-@@ -769,6 +769,7 @@
-       </div>
-       <div class="view-footer-item">
-         <a
-+          hidden="true"
-           class="privacy-policy-link"
-           data-l10n-id="privacy-policy"
-           target="_blank"
+         <div class="view-footer-item">
+           <a
++            hidden="true"
+             class="privacy-policy-link"
+             data-l10n-id="privacy-policy"
+             target="_blank"

@@ -1,6 +1,6 @@
---- a/browser/base/content/browser-menubar.inc
-+++ b/browser/base/content/browser-menubar.inc
-@@ -432,6 +432,7 @@
+--- a/browser/base/content/browser-menubar.inc.xhtml
++++ b/browser/base/content/browser-menubar.inc.xhtml
+@@ -460,6 +460,7 @@
                            disabled="true"
                            appmenu-data-l10n-id="appmenuitem-report-broken-site"/>
                  <menuitem id="feedbackPage"

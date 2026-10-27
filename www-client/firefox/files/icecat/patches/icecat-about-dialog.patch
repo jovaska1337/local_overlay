@@ -20,15 +20,27 @@
      </vbox>
 --- a/browser/base/content/aboutDialog.css
 +++ b/browser/base/content/aboutDialog.css
-@@ -32,10 +32,9 @@
- #rightBox {
-   background-image: url("chrome://branding/content/about-wordmark.svg");
+@@ -19,13 +19,12 @@
+ #leftBox {
+   background-image: image-set(url("chrome://branding/content/about-logo.png"), url("chrome://branding/content/about-logo@2x.png") 2x);
    background-repeat: no-repeat;
--  background-size: 288px auto;
-   /* padding-top creates room for the wordmark */
-   padding-top: 38px;
+-  background-size: 192px auto;
+   background-position: center 40px;
+   /* min-width and min-height create room for the logo; logo is 192px tall w/
+      40px above it, this leaves 8px on the bottom at the minimum height */
+   min-width: 210px;
+   min-height: 240px;
 -  margin-top: 20px;
 +  margin-top: 60px;
-   /* We don't want this box to contribute arbitrarily to the intrinsic size of
-    * the dialog, so set the width to a reasonable size, but let it flex to take
-    * all available space. */
+   margin-inline-start: 30px;
+ }
+ 
+@@ -65,7 +64,7 @@
+ #release {
+   font-weight: var(--font-weight-bold);
+   font-size: 125%;
+-  margin-top: 10px;
++  margin-top: 90px;
+   margin-inline-start: 0;
+ }
+ 

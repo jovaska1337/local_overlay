@@ -1,0 +1,11 @@
+--- a/browser/components/preferences/config/privacy.mjs
++++ b/browser/components/preferences/config/privacy.mjs
+@@ -2286,7 +2286,7 @@
+   id: "relayIntegration",
+   deps: ["savePasswords", "relayFeature"],
+   visible: () => {
+-    return lazy.FirefoxRelay.isAvailable;
++    return false;
+   },
+   disabled: ({ savePasswords, relayFeature }) => {
+     return !savePasswords.value || relayFeature.pref.locked;

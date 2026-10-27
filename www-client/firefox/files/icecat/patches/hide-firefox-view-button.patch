@@ -1,6 +1,6 @@
---- a/browser/base/content/browser-menubar.inc
-+++ b/browser/base/content/browser-menubar.inc
-@@ -362,6 +362,7 @@
+--- a/browser/base/content/browser-menubar.inc.xhtml
++++ b/browser/base/content/browser-menubar.inc.xhtml
+@@ -384,6 +384,7 @@
                          data-l10n-id="menu-tools-fxa-re-auth"/>
  
                <menuitem id="menu_openFirefoxView"
@@ -10,7 +10,7 @@
                <menu id="browserToolsMenu" data-l10n-id="menu-tools-browser-tools">
 --- a/browser/base/content/navigator-toolbox.inc.xhtml
 +++ b/browser/base/content/navigator-toolbox.inc.xhtml
-@@ -41,6 +41,7 @@
+@@ -42,6 +42,7 @@
                         role="button"
                         aria-pressed="false"
                         cui-areatype="toolbar"

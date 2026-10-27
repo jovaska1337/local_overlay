@@ -1,8 +1,6 @@
-diff --git a/browser/moz.configure b/browser/moz.configure
-index e8b401a7dfb2..d5b3117ce3d8 100644
 --- a/browser/moz.configure
 +++ b/browser/moz.configure
-@@ -5,16 +5,19 @@
+@@ -3,11 +3,13 @@
  # file, You can obtain one at http://mozilla.org/MPL/2.0/.
  
  imply_option("MOZ_PLACES", True)
@@ -21,23 +19,3 @@ index e8b401a7dfb2..d5b3117ce3d8 100644
  imply_option("MOZ_PROFILE_MIGRATOR", True)
  
  
--imply_option("MOZ_APP_VENDOR", "Mozilla")
-+imply_option("MOZ_APP_VENDOR", "GNU")
- imply_option("MOZ_APP_ID", "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}")
-+imply_option("MOZ_APP_PROFILE", "mozilla/firefox")
- # Include the DevTools client, not just the server (which is the default)
- imply_option("MOZ_DEVTOOLS", "all")
- imply_option("BROWSER_CHROME_URL", "chrome://browser/content/browser.xhtml")
-diff --git a/build/moz.configure/init.configure b/build/moz.configure/init.configure
-index 193272588caa..da8a729548c8 100644
---- a/build/moz.configure/init.configure
-+++ b/build/moz.configure/init.configure
-@@ -991,7 +991,7 @@ set_config("MOZ_BUILD_APP", build_project)
- set_define("MOZ_BUILD_APP", build_project)
- 
- 
--option(env="MOZILLA_OFFICIAL", help="Build an official release")
-+option(env="MOZILLA_OFFICIAL", help="Build an official release", default=False)
- 
- 
- @depends("MOZILLA_OFFICIAL")

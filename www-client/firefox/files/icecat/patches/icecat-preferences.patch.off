@@ -1,0 +1,258 @@
+--- a/browser/base/content/appmenu-viewcache.inc.xhtml
++++ b/browser/base/content/appmenu-viewcache.inc.xhtml
+@@ -162,6 +162,9 @@
+                      key="key_preferencesCmdMac"
+ #endif
+                      />
++      <toolbarbutton id="appMenu-icecatsettings-button"
++                     class="subviewbutton"
++                     data-l10n-id="appmenuitem-icecat-settings"/>
+       <toolbarbutton id="appMenu-more-button2"
+                      class="subviewbutton subviewbutton-nav"
+                      data-l10n-id="appmenuitem-more-tools"
+--- a/browser/base/content/browser-menubar.inc.xhtml
++++ b/browser/base/content/browser-menubar.inc.xhtml
+@@ -123,6 +123,8 @@
+                           />
+ #endif
+ #endif
++                <menuitem id="menu_icecat_preferences"
++                   data-l10n-id="appmenuitem-icecat-settings"/>
+               </menupopup>
+             </menu>
+ 
+--- a/browser/base/content/browser-menubar.js
++++ b/browser/base/content/browser-menubar.js
+@@ -14,6 +14,9 @@
+         case "menu_settings":
+           openPreferences(undefined);
+           break;
++        case "menu_icecat_preferences":
++          openPreferences("privacy-iceCatPrivacy");
++          break;
+ 
+         // == view-menu ==
+         case "menu_pageStyleNoStyle":
+--- a/browser/components/customizableui/content/panelUI.js
++++ b/browser/components/customizableui/content/panelUI.js
+@@ -438,6 +438,9 @@
+       case "appMenu-settings-button":
+         openPreferences();
+         break;
++      case "appMenu-icecatsettings-button":
++        openPreferences("privacy-iceCatPrivacy");
++        break;
+       case "appMenu-more-button2":
+         this.showMoreToolsPanel(target);
+         break;
+--- a/browser/components/preferences/preferences.js
++++ b/browser/components/preferences/preferences.js
+@@ -393,6 +393,7 @@
+       "ipprotection",
+       "cookiesAndSiteData2",
+       "history2",
++      "iceCatPrivacy",
+       "nonTechnicalPrivacy2",
+       "dnsOverHttps",
+       "connectionLink",
+--- a/browser/components/preferences/privacy.inc.xhtml
++++ b/browser/components/preferences/privacy.inc.xhtml
+@@ -542,6 +542,9 @@
+ <html:setting-group groupid="history" data-category="panePrivacy" hidden="true" data-srd-groupid="history2"/>
+ <html:setting-group groupid="history2" data-category="panePrivacy" hidden="true" data-srd-migrated=""/>
+ 
++<!-- IceCat-specific -->
++<html:setting-group groupid="iceCatPrivacy" data-category="panePrivacy" data-subcategory="iceCatPrivacy" hidden="true" data-srd-migrated=""/>
++
+ <!-- Permissions -->
+ <html:setting-group groupid="permissions" data-category="panePrivacy" data-subcategory="permissions" hidden="true" data-srd-migrated=""></html:setting-group>
+ 
+--- a/browser/components/preferences/privacy.js
++++ b/browser/components/preferences/privacy.js
+@@ -119,6 +119,8 @@
+ 
+ // Sets the "Learn how" SUMO link in the Strict/Custom options of Content Blocking.
+ function setUpContentBlockingWarnings() {
++  return; /* Disable these warnings */
++
+   document.getElementById("fpiIncompatibilityWarning").hidden =
+     !gIsFirstPartyIsolated;
+ 
+@@ -625,6 +627,7 @@
+     initSettingGroup("ipprotection");
+     initSettingGroup("history");
+     initSettingGroup("history2");
++    initSettingGroup("iceCatPrivacy");
+     initSettingGroup("permissions");
+     initSettingGroup("dataCollection");
+     initSettingGroup("privacyPanel");
+--- a/browser/components/preferences/config/privacy.mjs
++++ b/browser/components/preferences/config/privacy.mjs
+@@ -357,6 +357,16 @@
+     type: "bool",
+   },
+ 
++  // IceCat-specific
++  { id: "javascript.enabled", type: "bool" },
++  { id: "browser.display.use_document_fonts", type: "int" },
++  { id: "extensions.update.enabled", type: "bool" },
++  { id: "network.http.referer.spoofSource", type: "bool" },
++  { id: "webgl.disabled", type: "bool" },
++  { id: "network.captive-portal-service.enabled", type: "bool" },
++  { id: "network.connectivity-service.enabled", type: "bool" },
++  { id: "browser.search.geoip.url", type: "string" },
++
+   // History
+   { id: "places.history.enabled", type: "bool" },
+   { id: "browser.formfill.enable", type: "bool" },
+@@ -1536,6 +1546,54 @@
+       },
+     ],
+   },
++  iceCatPrivacy: {
++    id: "iceCatPrivacy",
++    subcategory: "iceCatPrivacy",
++    l10nId: "icecat-privacy-group-header",
++    headingLevel: 2,
++    items: [
++      {
++        id: "disableJavaScript",
++        l10nId: "disable-javascript-option",
++      },
++      {
++        id: "disableCustomFonts",
++        l10nId: "disable-custom-fonts-option",
++      },
++      {
++        id: "isolateRequestFirstParty",
++        l10nId: "isolate-request-first-party-option",
++      },
++      {
++        id: "autoUpdateExtensions",
++        l10nId: "auto-update-extensions-option",
++      },
++      {
++        id: "spoofReferrers",
++        l10nId: "spoof-referers-option",
++      },
++      {
++        id: "resistFingerprinting",
++        l10nId: "resist-fingerprinting-option",
++      },
++      {
++        id: "detectCaptivePortal",
++        l10nId: "detect-captive-portal-option",
++      },
++      {
++        id: "detectNetworkConnectivity",
++        l10nId: "detect-network-connectivity-option",
++      },
++      {
++        id: "geolocation",
++        l10nId: "geolocation-option",
++      },
++      {
++        id: "webgl",
++        l10nId: "webgl-option",
++      },
++    ],
++  },
+ });
+ 
+ Preferences.addSetting({
+@@ -1556,6 +1614,95 @@
+     trustPanelFeatureGate.value && trustPanelBreachAlertsFeatureGate.value,
+ });
+ 
++Preferences.addSetting({
++  id: "enableJavaScript",
++  pref: "javascript.enabled",
++});
++
++Preferences.addSetting({
++  id: "disableJavaScript",
++  deps: ["enableJavaScript"],
++  get: (_value, deps) => {
++    return !deps.enableJavaScript.value;
++  },
++  set: (checked, deps) => {
++    deps.enableJavaScript.value = !checked;
++  },
++});
++
++Preferences.addSetting({
++  id: "useDocumentFonts",
++  pref: "browser.display.use_document_fonts",
++});
++
++Preferences.addSetting({
++  id: "disableCustomFonts",
++  deps: ["useDocumentFonts"],
++  get: (_value, deps) => {
++    return deps.useDocumentFonts.value == 0;
++  },
++  set: (checked, deps) => {
++    deps.useDocumentFonts.value = checked ? 0 : 1;
++  },
++});
++
++Preferences.addSetting({
++  id: "isolateRequestFirstParty",
++  pref: "privacy.firstparty.isolate",
++});
++
++Preferences.addSetting({
++  id: "autoUpdateExtensions",
++  pref: "extensions.update.enabled",
++});
++
++Preferences.addSetting({
++  id: "spoofReferrers",
++  pref: "network.http.referer.spoofSource",
++});
++
++Preferences.addSetting({
++  id: "detectCaptivePortal",
++  pref: "network.captive-portal-service.enabled",
++});
++
++Preferences.addSetting({
++  id: "detectNetworkConnectivity",
++  pref: "network.connectivity-service.enabled",
++});
++
++Preferences.addSetting({
++  id: "geoIPURL",
++  pref: "browser.search.geoip.url",
++});
++
++Preferences.addSetting({
++  id: "geolocation",
++  deps: ["geoIPURL"],
++  get: (_value, deps) => {
++    return deps.geoIPURL.value !== "";
++  },
++  set: (checked, deps) => {
++    deps.geoIPURL.value = checked ? "https://location.services.mozilla.com/v1/country?key=%MOZILLA_API_KEY%" : "";
++  },
++});
++
++Preferences.addSetting({
++  id: "webglDisabled",
++  pref: "webgl.disabled",
++});
++
++Preferences.addSetting({
++  id: "webgl",
++  deps: ["webglDisabled"],
++  get: (_value, deps) => {
++    return !deps.webglDisabled.value;
++  },
++  set: (checked, deps) => {
++    deps.webglDisabled.value = !checked;
++  },
++});
++
+ /**
+  * This class is used to create Settings that are used to warn the user about
+  * potential misconfigurations. It should be passed into Preferences.addSetting

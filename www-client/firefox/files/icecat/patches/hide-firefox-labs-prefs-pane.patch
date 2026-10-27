@@ -1,0 +1,10 @@
+--- a/browser/components/preferences/preferences.js
++++ b/browser/components/preferences/preferences.js
+@@ -300,6 +300,7 @@
+     iconSrc: "chrome://browser/skin/labs-16.svg",
+     groupIds: ["firefoxLabsFeatures"],
+     module: "chrome://browser/content/preferences/config/firefoxLabs.mjs",
++    visible: () => false,
+   },
+   general: {
+     l10nId: "pane-general-title",

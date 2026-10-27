@@ -1,0 +1,13 @@
+--- a/browser/components/genai/GenAI.sys.mjs
++++ b/browser/components/genai/GenAI.sys.mjs
+@@ -783,6 +783,10 @@
+       contextTabs = null,
+     } = contextMenu;
+ 
++    // Disable the chat menu
++    showItem(menu, false);
++    return;
++
+     const uri = browser.browsingContext?.currentURI.spec;
+     if (uri?.startsWith("moz-extension:")) {
+       showItem(menu, false);

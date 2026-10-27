@@ -1,0 +1,16 @@
+--- a/browser/base/content/browser-safebrowsing.js
++++ b/browser/base/content/browser-safebrowsing.js
+@@ -17,11 +17,11 @@
+     const reportMenu = document.getElementById(
+       "menu_HelpPopup_reportPhishingtoolmenu"
+     );
+-    reportMenu.hidden = isPhishingPage;
++    reportMenu.hidden = true;       /* Hard-disable */
+     const reportErrorMenu = document.getElementById(
+       "menu_HelpPopup_reportPhishingErrortoolmenu"
+     );
+-    reportErrorMenu.hidden = !isPhishingPage;
++    reportErrorMenu.hidden = true;  /* Hard-disable */
+ 
+     // Now look at the currentURI to learn which page we were trying
+     // to browse to.

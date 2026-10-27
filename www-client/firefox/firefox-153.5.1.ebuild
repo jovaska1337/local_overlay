@@ -570,18 +570,25 @@ src_prepare() {
 		# Disable activity-stream anti-features.
 		# These are not condensed into a single sed script so that it
 		# fails on individual commands that didn't change the source
-		local activity_stream=${S}/browser/extensions/newtab/lib/ActivityStream.sys.mjs
-		sed '/^const DEFAULT_SITES/,/^])\;/c const DEFAULT_SITES = new Map\([[""]]\);' -i ${S}/browser/extensions/newtab/lib/DefaultSites.sys.mjs
+		local activity_stream=browser/extensions/newtab/lib/ActivityStream.sys.mjs
+		sed '/^const DEFAULT_SITES_MAP/,/^])\;/c const DEFAULT_SITES_MAP = new Map\([[""]]\);' -i browser/extensions/newtab/lib/DefaultSites.sys.mjs
 		sed '/"showSponsored"/,/value/s/value: true/value: false/' -i $activity_stream
 		sed '/  "telemetry"/,/value/s/value: true/value: false/' -i $activity_stream
-		sed '/"section\.highlights\.includePocket"/,/value/s/value: true/value: false/' -i $activity_stream
-		sed '/read_more_endpoint:/,/http/s/"http.*/"",/' -i $activity_stream
-		sed '/stories_endpoint: `/,/}`,/c stories_endpoint: "",' -i $activity_stream
-		sed 's/\(stories_referrer:\) .http.*/\1 "",/' -i $activity_stream
-		sed 's/\(topics_endpoint:\) .http.*/\1 "",/' -i $activity_stream
+		sed '/"unifiedAds\.endpoint"/,/value/s/value: .*/value: "",/' -i $activity_stream
+		sed '/"weather\..*Endpoint"/,/value/s/value: .*/value: "",/' -i $activity_stream
+		sed '/"sports\..*Endpoint"/,/value/s/value: .*/value: "",/' -i $activity_stream
 		sed '/"telemetry\.structuredIngestion\.endpoint"/,/value/s/value: .*/value: "",/' -i $activity_stream
-		sed '/name: "telemetry"/,/value/s/value: true/value: false/' -i $activity_stream
+		sed '/"discoverystream\.endpoints"/,/"http/s/"http.*",/"",/' -i $activity_stream
+		sed '/"discoverystream\.endpointSpocsClear"/,/value/s/value: .*/value: "",/' -i $activity_stream
 		sed '/name: "system\.topstories"/,/},/s/.*!!locales.*/false/' -i $activity_stream
+
+		for name in adsfeed discoverystreamfeed externalcomponentsfeed favicon \
+					inferredpersonalizationfeed listsfeed newtabattributionfeed \
+					newtabmessaging sectionslayoutfeed smartshortcutsfeed \
+					sportsfeed telemetry wallpaperfeed weatherfeed
+		do
+			sed "/name: \"$name\"/,/value/s/value: true/value: false/" -i $activity_stream
+		done
 
 		echo "{ data: [] }" > ${S}/browser/components/topsites/content/tippytop/top_sites.json
 		echo "{ data: [], \"timestamp\": 1647020600359 }" > ${S}/browser/components/topsites/content/tippytop/top_sites.json
@@ -637,9 +644,6 @@ src_prepare() {
 		# remove default top sites
 		sed "s/@TS@/${ts}/g" "${FILESDIR}/search/empty.json" \
 			> "${S}/services/settings/dumps/main/top-sites.json" || die
-
-		# OpenSUSE gconf proxy fix
-		eapply "${FILESDIR}/patches/$(ver_cut 1)-no-gconf-proxy.patch"
 
 		# patch to hide automation status
 		eapply "${FILESDIR}/patches/firefox-hide-automation.patch"
@@ -1459,7 +1463,7 @@ src_install() {
 		-e "s:@DEFAULT_WAYLAND@:${use_wayland}:" \
 		"${ED}/usr/bin/${PN}" || die
 
-	readme.gentoo_create_doc
+	#readme.gentoo_create_doc
 }
 
 pkg_postinst() {
